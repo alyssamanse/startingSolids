@@ -1,8 +1,8 @@
 // Minimal offline cache — lets the app open even with no signal, once you've
 // loaded it at least once. Your tracked data itself lives in localStorage,
 // not in this cache, so this doesn't affect your saved entries either way.
-const CACHE_NAME = "starting-solids-v1";
-const ASSETS = ["./", "./index.html", "./app.bundle.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
+const CACHE_NAME = "starting-solids-v2";
+const ASSETS = ["./", "./index.html", "./desktop.bundle.js", "./mobile.bundle.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
