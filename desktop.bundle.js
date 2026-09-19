@@ -57755,7 +57755,7 @@ This typically indicates that your device does not have a healthy Internet conne
     const key = food && typeof food === "object" ? food.key : null;
     const label = food && typeof food === "object" ? food.label : food;
     const n2 = normalize2(label);
-    return entries.filter((e3) => e3.foods.some((f) => normalize2(f) === n2) || key && e3.brandedProductKey === key).map((e3) => ({ date: e3.date, response: e3.response, prep: e3.prep, notes: e3.notes, concerning: e3.concerning })).sort((a, b2) => a.date < b2.date ? -1 : a.date > b2.date ? 1 : 0);
+    return entries.filter((e3) => e3.foods.some((f) => normalize2(f) === n2) || key && inferBrandedKeyForEntry(e3) === key).map((e3) => ({ date: e3.date, response: e3.response, prep: e3.prep, notes: e3.notes, concerning: e3.concerning })).sort((a, b2) => a.date < b2.date ? -1 : a.date > b2.date ? 1 : 0);
   }
   function findFoodsContaining(foodKey, customMeals) {
     const results = [];
@@ -58191,6 +58191,17 @@ This typically indicates that your device does not have a healthy Internet conne
   }
   function brandedTag(key, qty) {
     return BRANDED_PRODUCT_COMPONENTS[key] ? { brandedProductKey: key, brandedQty: qty || 1 } : {};
+  }
+  function inferBrandedKeyForEntry(e3) {
+    if (e3.brandedProductKey) return e3.brandedProductKey;
+    if (!Array.isArray(e3.foods) || e3.foods.length < 2) return null;
+    const entrySet = e3.foods.map(normalize2).sort().join("|");
+    for (const key of Object.keys(BRANDED_PRODUCT_COMPONENTS)) {
+      const labels = BRANDED_PRODUCT_COMPONENTS[key].map((k2) => DATA.FOOD_LIB[k2]?.label).filter(Boolean);
+      if (labels.length !== e3.foods.length) continue;
+      if (labels.map(normalize2).sort().join("|") === entrySet) return key;
+    }
+    return null;
   }
   function computeInventoryStatus(brandedKey, purchases, entries) {
     const purchased = (purchases || []).reduce((sum, p2) => sum + (p2.qty || 0), 0);
@@ -59415,9 +59426,10 @@ This typically indicates that your device does not have a healthy Internet conne
     const set2 = (patch) => onChange({ ...value, ...patch });
     const commitFood = (name3) => {
       const key = findKeyByLabel(name3);
-      const parts = key && (COMBO_COMPONENTS[key] || RECIPE_COMPONENTS[key] || BRANDED_PRODUCT_COMPONENTS[key] || CUSTOM_MEAL_COMPONENTS[key]) ? decomposeToLabels(key) : [name3];
+      const isBranded = key && BRANDED_PRODUCT_COMPONENTS[key];
+      const parts = key && (COMBO_COMPONENTS[key] || RECIPE_COMPONENTS[key] || isBranded || CUSTOM_MEAL_COMPONENTS[key]) ? decomposeToLabels(key) : [name3];
       const newOnes = parts.filter((p2) => !value.foods.includes(p2));
-      set2({ foods: [...value.foods, ...newOnes] });
+      set2({ foods: [...value.foods, ...newOnes], ...isBranded ? brandedTag(key) : {} });
       setFoodInput("");
       setPendingMatch(null);
     };
@@ -60491,41 +60503,46 @@ This typically indicates that your device does not have a healthy Internet conne
           dayEntries.length === 1 ? "try" : "tries"
         ] })
       ] }),
-      dayEntries.map((e3) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        display: "flex",
-        gap: 12,
-        padding: "10px 12px",
-        marginBottom: 8,
-        background: COLORS.paper,
-        border: `1px solid ${COLORS.line}`,
-        borderRadius: 10,
-        borderLeft: e3.concerning ? `4px solid ${COLORS.red}` : `4px solid ${COLORS.sageLt}`
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 22, lineHeight: 1 }, children: RESPONSE_MAP[e3.response]?.emoji }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700, fontSize: 13.5 }, children: e3.foods.join(" + ") }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 10, flexShrink: 0 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => onEdit({ ...e3 }), style: { background: "none", border: "none", color: COLORS.sageDk, cursor: "pointer", fontSize: 11.5, padding: 0 }, children: "Edit" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => onDelete(e3.id), style: { background: "none", border: "none", color: COLORS.red, cursor: "pointer", fontSize: 11.5, padding: 0 }, children: "Delete" })
+      dayEntries.map((e3) => {
+        const brandedKey = inferBrandedKeyForEntry(e3);
+        const brandedLabel = brandedKey && DATA.FOOD_LIB[brandedKey]?.label;
+        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
+          display: "flex",
+          gap: 12,
+          padding: "10px 12px",
+          marginBottom: 8,
+          background: COLORS.paper,
+          border: `1px solid ${COLORS.line}`,
+          borderRadius: 10,
+          borderLeft: e3.concerning ? `4px solid ${COLORS.red}` : `4px solid ${COLORS.sageLt}`
+        }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 22, lineHeight: 1 }, children: RESPONSE_MAP[e3.response]?.emoji }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700, fontSize: 13.5 }, children: brandedLabel || e3.foods.join(" + ") }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 10, flexShrink: 0 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => onEdit({ ...e3 }), style: { background: "none", border: "none", color: COLORS.sageDk, cursor: "pointer", fontSize: 11.5, padding: 0 }, children: "Edit" }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => onDelete(e3.id), style: { background: "none", border: "none", color: COLORS.red, cursor: "pointer", fontSize: 11.5, padding: 0 }, children: "Delete" })
+              ] })
+            ] }),
+            brandedLabel && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, color: COLORS.grey, marginTop: 1 }, children: e3.foods.join(", ") }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 11.5, color: COLORS.grey, marginTop: 2 }, children: [
+              e3.prep,
+              " \xB7 ",
+              RESPONSE_MAP[e3.response]?.label
+            ] }),
+            e3.concerning && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 4 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: COLORS.redLt, fg: COLORS.red, children: [
+              "\u26A0 ",
+              formatConcerningSummary(e3)
+            ] }) }),
+            e3.notes && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.charcoal, marginTop: 4, fontStyle: "italic" }, children: [
+              '"',
+              e3.notes,
+              '"'
             ] })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 11.5, color: COLORS.grey, marginTop: 2 }, children: [
-            e3.prep,
-            " \xB7 ",
-            RESPONSE_MAP[e3.response]?.label
-          ] }),
-          e3.concerning && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 4 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: COLORS.redLt, fg: COLORS.red, children: [
-            "\u26A0 ",
-            formatConcerningSummary(e3)
-          ] }) }),
-          e3.notes && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.charcoal, marginTop: 4, fontStyle: "italic" }, children: [
-            '"',
-            e3.notes,
-            '"'
           ] })
-        ] })
-      ] }, e3.id))
+        ] }, e3.id);
+      })
     ] }, date2)) });
   }
   function MilestonesView({ entries }) {
@@ -60640,7 +60657,11 @@ This typically indicates that your device does not have a healthy Internet conne
       const g = {};
       entries.filter((e3) => e3.foods.length > 1).forEach((e3) => {
         const key = comboKey(e3.foods);
-        if (!g[key]) g[key] = { label: comboLabel(e3.foods), entries: [] };
+        if (!g[key]) {
+          const brandedKey = inferBrandedKeyForEntry(e3);
+          const brandedLabel = brandedKey && DATA.FOOD_LIB[brandedKey]?.label;
+          g[key] = { label: brandedLabel || comboLabel(e3.foods), entries: [] };
+        }
         g[key].entries.push(e3);
       });
       Object.values(g).forEach((c2) => c2.entries.sort((a, b2) => a.date < b2.date ? 1 : -1));
