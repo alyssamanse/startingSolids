@@ -56068,23 +56068,23 @@ This typically indicates that your device does not have a healthy Internet conne
   var REACTION_TYPES = ["Skin irritation", "Rash", "Vomiting", "Breathing trouble", "Other"];
   var HERBS_KEYS = ["cinnamon_spice", "cumin_spice", "basil_herb", "garlic_cooked", "olive_oil", "turmeric", "ginger", "oregano", "coconut_oil"];
   var COLORS = {
-    cream: "#FBF6EC",
-    paper: "#FFFDF9",
-    sage: "#7C9473",
-    sageDk: "#4C6444",
-    sageLt: "#E7EDE2",
-    terra: "#E1794F",
-    terraLt: "#FBE4D4",
-    gold: "#CE9C3F",
-    goldLt: "#F6E9CC",
-    charcoal: "#3A332B",
-    grey: "#7B7568",
-    line: "#E7DECC",
-    blue: "#5D82A6",
-    blueLt: "#E2ECF3",
-    red: "#C0473A",
-    redLt: "#F8DFDA",
-    greenLt: "#E4F0DE"
+    cream: "var(--c-cream)",
+    paper: "var(--c-paper)",
+    sage: "var(--c-sage)",
+    sageDk: "var(--c-sageDk)",
+    sageLt: "var(--c-sageLt)",
+    terra: "var(--c-terra)",
+    terraLt: "var(--c-terraLt)",
+    gold: "var(--c-gold)",
+    goldLt: "var(--c-goldLt)",
+    charcoal: "var(--c-charcoal)",
+    grey: "var(--c-grey)",
+    line: "var(--c-line)",
+    blue: "var(--c-blue)",
+    blueLt: "var(--c-blueLt)",
+    red: "var(--c-red)",
+    redLt: "var(--c-redLt)",
+    greenLt: "var(--c-greenLt)"
   };
   function normalize2(s2) {
     return (s2 || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -56264,6 +56264,34 @@ This typically indicates that your device does not have a healthy Internet conne
       if (report) report("none");
       throw e3;
     }
+  }
+  function useThemePreference() {
+    const [pref, setPref] = (0, import_react53.useState)(() => {
+      try {
+        return localStorage.getItem("ss_theme_pref") || "auto";
+      } catch (e3) {
+        return "auto";
+      }
+    });
+    (0, import_react53.useEffect)(() => {
+      try {
+        if (pref === "light" || pref === "dark") document.documentElement.setAttribute("data-theme", pref);
+        else document.documentElement.removeAttribute("data-theme");
+        const isDark = pref === "dark" || pref === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", isDark ? "#1C1B17" : "#7C9473");
+      } catch (e3) {
+      }
+    }, [pref]);
+    const setTheme = (next) => {
+      setPref(next);
+      try {
+        if (next === "auto") localStorage.removeItem("ss_theme_pref");
+        else localStorage.setItem("ss_theme_pref", next);
+      } catch (e3) {
+      }
+    };
+    return [pref, setTheme];
   }
   function usePersistentState(key, initial, onSaved, onBackend) {
     const [value, setValue] = (0, import_react53.useState)(initial);
@@ -57444,7 +57472,7 @@ This typically indicates that your device does not have a healthy Internet conne
         left: 0,
         right: 0,
         marginTop: 4,
-        background: "#fff",
+        background: COLORS.paper,
         border: `1px solid ${COLORS.line}`,
         borderRadius: 10,
         maxHeight: 220,
@@ -57545,38 +57573,47 @@ This typically indicates that your device does not have a healthy Internet conne
     { id: "inventory", label: "Inventory", icon: "\u{1F4E6}" },
     { id: "recipecatalog", label: "Recipe Catalog", icon: "\u{1F4D6}" },
     { id: "diningout", label: "Safe to Order", icon: "\u{1F37D}\uFE0F" },
-    { id: "readiness", label: "Signs of Readiness", icon: "\u2705" },
-    { id: "gagchoke", label: "Gagging vs Choking", icon: "\u{1F6A8}" },
     { id: "allergens", label: "Allergen Schedule", icon: "\u{1F95C}" },
-    { id: "cutting", label: "Cutting Guide", icon: "\u{1F52A}" },
-    { id: "portions", label: "Portions by Age", icon: "\u{1F37D}\uFE0F" },
-    { id: "herbs", label: "Herbs & Spices", icon: "\u{1F33F}" },
     { id: "grocery", label: "Grocery Lists", icon: "\u{1F6D2}" },
     { id: "batch", label: "Batch Cooking", icon: "\u{1F9CA}" },
-    { id: "poop", label: "Poop Changes", icon: "\u{1F4A9}" },
+    // Grouped under one collapsible entry — pages you lean on heavily in the
+    // first few weeks but check only occasionally once solids are underway.
+    // See the "group" handling in MoreSheet below.
+    { group: "gettingstarted", label: "Getting Started", icon: "\u{1F331}", items: [
+      { id: "readiness", label: "Signs of Readiness", icon: "\u2705" },
+      { id: "gagchoke", label: "Gagging vs Choking", icon: "\u{1F6A8}" },
+      { id: "cutting", label: "Cutting Guide", icon: "\u{1F52A}" },
+      { id: "portions", label: "Portions by Age", icon: "\u{1F37D}\uFE0F" },
+      { id: "herbs", label: "Herbs & Spices", icon: "\u{1F33F}" },
+      { id: "poop", label: "Poop Changes", icon: "\u{1F4A9}" }
+    ] },
     { id: "data", label: "Data & Backup", icon: "\u{1F4BE}" }
   ];
-  function MoreSheet({ onPick, onClose }) {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "fixed", inset: 0, background: "rgba(30,26,20,0.45)", zIndex: 300, display: "flex", alignItems: "flex-end" }, onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: "#fff", borderRadius: "18px 18px 0 0", width: "100%", maxHeight: "80vh", overflowY: "auto", paddingBottom: "env(safe-area-inset-bottom, 16px)" }, onClick: (e3) => e3.stopPropagation(), children: [
+  function MoreSheet({ onPick, onClose, active }) {
+    const [expandedGroups, setExpandedGroups] = (0, import_react53.useState)({});
+    const itemBtnStyle = { display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "none", border: "none", padding: "14px 16px", fontSize: 15.5, fontWeight: 600, color: COLORS.charcoal, cursor: "pointer", borderBottom: `1px solid ${COLORS.line}` };
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "fixed", inset: 0, background: "rgba(30,26,20,0.45)", zIndex: 300, display: "flex", alignItems: "flex-end" }, onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: COLORS.paper, borderRadius: "18px 18px 0 0", width: "100%", maxHeight: "80vh", overflowY: "auto", paddingBottom: "env(safe-area-inset-bottom, 16px)" }, onClick: (e3) => e3.stopPropagation(), children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 40, height: 4, background: COLORS.line, borderRadius: 4, margin: "10px auto" } }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { padding: "4px 8px 12px 8px" }, children: MORE_ITEMS.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => onPick(item.id), style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        width: "100%",
-        textAlign: "left",
-        background: "none",
-        border: "none",
-        padding: "14px 16px",
-        fontSize: 15.5,
-        fontWeight: 600,
-        color: COLORS.charcoal,
-        cursor: "pointer",
-        borderBottom: `1px solid ${COLORS.line}`
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 19 }, children: item.icon }),
-        item.label
-      ] }, item.id)) })
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { padding: "4px 8px 12px 8px" }, children: MORE_ITEMS.map((item) => {
+        if (item.items) {
+          const isOpen = expandedGroups[item.group] ?? item.items.some((sub) => sub.id === active);
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setExpandedGroups((prev) => ({ ...prev, [item.group]: !isOpen })), style: itemBtnStyle, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 19 }, children: item.icon }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { flex: 1 }, children: item.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { opacity: 0.6, fontSize: 13 }, children: isOpen ? "\u25BE" : "\u25B8" })
+            ] }),
+            isOpen && item.items.map((sub) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => onPick(sub.id), style: { ...itemBtnStyle, paddingLeft: 34, fontSize: 14.5 }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 17 }, children: sub.icon }),
+              sub.label
+            ] }, sub.id))
+          ] }, item.group);
+        }
+        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => onPick(item.id), style: itemBtnStyle, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 19 }, children: item.icon }),
+          item.label
+        ] }, item.id);
+      }) })
     ] }) });
   }
   function BottomNav({ active, onTab, onMore }) {
@@ -57585,7 +57622,7 @@ This typically indicates that your device does not have a healthy Internet conne
       bottom: 0,
       left: 0,
       right: 0,
-      background: "#fff",
+      background: COLORS.paper,
       borderTop: `1px solid ${COLORS.line}`,
       display: "flex",
       justifyContent: "space-around",
@@ -57861,7 +57898,7 @@ This typically indicates that your device does not have a healthy Internet conne
       });
     };
     const inputStyle = { padding: 10, fontSize: 15, borderRadius: 8, border: `1px solid ${COLORS.line}`, boxSizing: "border-box", fontFamily: "inherit" };
-    const stepperBtnStyle = { width: 32, height: 32, borderRadius: 6, border: `1px solid ${COLORS.line}`, background: "#fff", fontSize: 18, fontWeight: 700, cursor: "pointer", color: COLORS.sageDk, lineHeight: 1 };
+    const stepperBtnStyle = { width: 32, height: 32, borderRadius: 6, border: `1px solid ${COLORS.line}`, background: COLORS.paper, fontSize: 18, fontWeight: 700, cursor: "pointer", color: COLORS.sageDk, lineHeight: 1 };
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, { eyebrow: "Branded Meals", title: "Inventory", dek: "Add what you've purchased to get low-stock warnings." }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
@@ -58064,7 +58101,7 @@ This typically indicates that your device does not have a healthy Internet conne
       return [...visibleSchedule].sort((a, b2) => a.date < b2.date ? -1 : 1)[0];
     }, [visibleSchedule]);
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, { eyebrow: "Look It Up", title: "Search a Food", dek: "Every date tried, and every week scheduled \u2014 across all 12 weeks at once." }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, { eyebrow: "Look It Up", title: "Search a Food", dek: `Every date tried, and every week scheduled \u2014 across all ${TOTAL_PLAN_WEEKS} weeks at once.` }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         "input",
         {
@@ -58106,7 +58143,7 @@ This typically indicates that your device does not have a healthy Internet conne
             "\u{1F4C5} Scheduled ",
             visibleSchedule.length > 0 && `(${visibleSchedule.length})`
           ] }),
-          visibleSchedule.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: COLORS.grey, fontSize: 13, fontStyle: "italic" }, children: schedule.length > 0 ? "No upcoming occurrences \u2014 it was scheduled earlier in the plan." : "Not scheduled anywhere in the 12-week plan." }),
+          visibleSchedule.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: COLORS.grey, fontSize: 13, fontStyle: "italic" }, children: schedule.length > 0 ? "No upcoming occurrences \u2014 it was scheduled earlier in the plan." : `Not scheduled anywhere in the ${TOTAL_PLAN_WEEKS}-week plan.` }),
           visibleSchedule.map((o2, i2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "7px 0", borderBottom: `1px solid ${COLORS.line}`, fontSize: 13 }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("b", { children: [
               "Week ",
@@ -58716,7 +58753,7 @@ This typically indicates that your device does not have a healthy Internet conne
       }
       onSave(value);
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "fixed", inset: 0, background: "rgba(30,26,20,0.5)", zIndex: 400, display: "flex", alignItems: "flex-end" }, onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: "#fff", borderRadius: "18px 18px 0 0", width: "100%", maxHeight: "92vh", overflowY: "auto", paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }, onClick: (e3) => e3.stopPropagation(), children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "fixed", inset: 0, background: "rgba(30,26,20,0.5)", zIndex: 400, display: "flex", alignItems: "flex-end" }, onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: COLORS.paper, borderRadius: "18px 18px 0 0", width: "100%", maxHeight: "92vh", overflowY: "auto", paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }, onClick: (e3) => e3.stopPropagation(), children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 40, height: 4, background: COLORS.line, borderRadius: 4, margin: "10px auto 4px" } }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "8px 18px 18px 18px" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }, children: [
@@ -59202,7 +59239,7 @@ This typically indicates that your device does not have a healthy Internet conne
       return () => clearTimeout(t2);
     }, [scrollDayIdx, week]);
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, { eyebrow: "The Core Plan", title: "12-Week Feeding Plan", dek: "Tap to edit text. Swap to replace a food, Skip if solids didn't happen, Log to send to the tracker." }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, { eyebrow: "The Core Plan", title: `${TOTAL_PLAN_WEEKS}-Week Feeding Plan`, dek: "Tap to edit text. Swap to replace a food, Skip if solids didn't happen, Log to send to the tracker." }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 6, marginBottom: 12 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: viewMode === "week" ? "sage" : "ghost", onClick: () => setViewMode("week"), children: "Week View" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: viewMode === "next7" ? "sage" : "ghost", onClick: () => setViewMode("next7"), children: "Next 7 Days" })
@@ -59957,6 +59994,7 @@ This typically indicates that your device does not have a healthy Internet conne
     ] });
   }
   function DataBackup({ entries, setEntries, overrides, setOverrides, planStartDate, setPlanStartDate, storageBackend, customFoodCategories, setCustomFoodCategories, cloudStatus, lastCloudUpdate, skippedDays, setSkippedDays, planOverrides, setPlanOverrides, dayCustomizations, setDayCustomizations, customMeals, setCustomMeals, inventoryPurchases, setInventoryPurchases, recipeCategoryOverrides, setRecipeCategoryOverrides }) {
+    const [themePref, setThemePref] = useThemePreference();
     const [importText, setImportText] = (0, import_react53.useState)("");
     const [status, setStatus] = (0, import_react53.useState)("");
     const [forceSyncStatus, setForceSyncStatus] = (0, import_react53.useState)("");
@@ -60027,7 +60065,7 @@ This typically indicates that your device does not have a healthy Internet conne
     };
     const backendInfo = {
       claude: { label: "Claude Artifact Storage", bg: COLORS.greenLt, fg: COLORS.sageDk, note: "Using Anthropic's built-in artifact storage." },
-      local: { label: "Browser Local Storage (fallback)", bg: COLORS.goldLt, fg: "#8a6a1e", note: "Claude's storage wasn't available, so this fell back to browser local storage \u2014 scoped to this exact session, and will NOT survive reopening the file as a new artifact." },
+      local: { label: "Local Device Cache", bg: COLORS.greenLt, fg: COLORS.sageDk, note: "This device also keeps an instant local copy for fast loading. Cloud Sync below is what actually keeps everything backed up and shared across devices." },
       none: { label: "No storage available", bg: COLORS.redLt, fg: COLORS.red, note: "Nothing is persisting right now \u2014 export before you close." },
       "checking\u2026": { label: "Checking\u2026", bg: COLORS.sageLt, fg: COLORS.grey, note: "" }
     }[storageBackend] || { label: storageBackend, bg: COLORS.sageLt, fg: COLORS.grey, note: "" };
@@ -60038,6 +60076,21 @@ This typically indicates that your device does not have a healthy Internet conne
     }[cloudStatus] || { label: cloudStatus, bg: COLORS.sageLt, fg: COLORS.grey };
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, { eyebrow: "Backup", title: "Data & Backup", dek: "Export regularly \u2014 see the note below." }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { marginBottom: 14 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "\u{1F317} Appearance" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, color: COLORS.grey, marginBottom: 10 }, children: "Auto follows your phone's own light/dark setting. Override it here if you'd rather this app always stay one way." }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 6 }, children: [{ id: "auto", label: "\u{1F504} Auto" }, { id: "light", label: "\u2600\uFE0F Light" }, { id: "dark", label: "\u{1F319} Dark" }].map((opt) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setThemePref(opt.id), style: {
+          flex: 1,
+          padding: "9px 10px",
+          borderRadius: 8,
+          fontWeight: 700,
+          fontSize: 12,
+          cursor: "pointer",
+          border: `1.5px solid ${themePref === opt.id ? COLORS.sage : COLORS.line}`,
+          background: themePref === opt.id ? COLORS.sageLt : COLORS.paper,
+          color: themePref === opt.id ? COLORS.sageDk : COLORS.charcoal
+        }, children: opt.label }, opt.id)) })
+      ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: COLORS.terraLt, borderColor: COLORS.terra }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "\u{1F503} Not seeing the latest update?" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.grey, marginBottom: 10 }, children: [
@@ -60052,13 +60105,6 @@ This typically indicates that your device does not have a healthy Internet conne
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "Storage status" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: backendInfo.bg, fg: backendInfo.fg, children: backendInfo.label }),
         backendInfo.note && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, color: COLORS.grey, marginTop: 8 }, children: backendInfo.note })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: COLORS.terraLt, borderColor: COLORS.terra }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 4, color: COLORS.terra, fontSize: 12.5, textTransform: "uppercase" }, children: "Known limitation" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 13 }, children: [
-          "If tracked food isn't still here after fully closing and reopening this file, persistent storage across separate opens likely isn't guaranteed for this delivery method. ",
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "Export before you close, import after you reopen." })
-        ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: COLORS.blueLt, borderColor: COLORS.blue }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "\u2601\uFE0F Cloud Sync (shared with your husband)" }),
@@ -60113,7 +60159,11 @@ This typically indicates that your device does not have a healthy Internet conne
     if (info.status === "completed") {
       return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: COLORS.cream }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 4 }, children: "\u{1F389} Plan Complete!" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 13, color: COLORS.grey }, children: "You've made it through all 12 weeks \u2014 baby's likely on 3 family meals a day now." })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 13, color: COLORS.grey }, children: [
+          "You've made it through all ",
+          TOTAL_PLAN_WEEKS,
+          " weeks \u2014 baby's likely on 3 family meals a day now."
+        ] })
       ] });
     }
     const { week, dayIndex, dayName } = info;
@@ -60370,7 +60420,7 @@ This typically indicates that your device does not have a healthy Internet conne
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenRotationCard, { entries, overrides, onLog }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "\u{1F5D3}\uFE0F Start with the Plan" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 13, color: COLORS.grey, marginBottom: 10 }, children: 'Browse 12 weeks day-by-day. Tap "Log" on any meal.' }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 13, color: COLORS.grey, marginBottom: 10 }, children: `Browse all ${TOTAL_PLAN_WEEKS} weeks day-by-day. Tap "Log" on any meal.` }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BigButton, { onClick: () => onTab("plan"), children: "Open the Plan \u2192" })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
@@ -60535,7 +60585,8 @@ This typically indicates that your device does not have a healthy Internet conne
           return null;
       }
     };
-    const activeTabLabel = TABS.find((t2) => t2.id === active)?.label || MORE_ITEMS.find((m2) => m2.id === active)?.label || "Starting Solids";
+    const flatMoreItems = MORE_ITEMS.flatMap((m2) => m2.items || [m2]);
+    const activeTabLabel = TABS.find((t2) => t2.id === active)?.label || flatMoreItems.find((m2) => m2.id === active)?.label || "Starting Solids";
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { minHeight: "100vh", background: COLORS.cream, fontFamily: "'Poppins', 'Segoe UI', system-ui, sans-serif", color: COLORS.charcoal, maxWidth: 480, margin: "0 auto", position: "relative" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -60566,7 +60617,7 @@ This typically indicates that your device does not have a healthy Internet conne
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorBoundary, { children: renderSection() })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BottomNav, { active, onTab: goTab, onMore: () => setMoreOpen(true) }),
-      moreOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MoreSheet, { onPick: goMoreItem, onClose: () => setMoreOpen(false) }),
+      moreOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MoreSheet, { onPick: goMoreItem, onClose: () => setMoreOpen(false), active }),
       modalEntry && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LogSheet, { initial: modalEntry, onClose: () => setModalEntry(null), onSave: saveFromModal, foodOptions }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BackToTopButton, {})
     ] });

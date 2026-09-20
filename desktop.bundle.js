@@ -57045,23 +57045,23 @@ This typically indicates that your device does not have a healthy Internet conne
   var REACTION_TYPES = ["Skin irritation", "Rash", "Vomiting", "Breathing trouble", "Other"];
   var HERBS_KEYS = ["cinnamon_spice", "cumin_spice", "basil_herb", "garlic_cooked", "olive_oil", "turmeric", "ginger", "oregano", "coconut_oil"];
   var COLORS = {
-    cream: "#FBF6EC",
-    paper: "#FFFDF9",
-    sage: "#7C9473",
-    sageDk: "#4C6444",
-    sageLt: "#E7EDE2",
-    terra: "#E1794F",
-    terraLt: "#FBE4D4",
-    gold: "#CE9C3F",
-    goldLt: "#F6E9CC",
-    charcoal: "#3A332B",
-    grey: "#7B7568",
-    line: "#E7DECC",
-    blue: "#5D82A6",
-    blueLt: "#E2ECF3",
-    red: "#C0473A",
-    redLt: "#F8DFDA",
-    greenLt: "#E4F0DE"
+    cream: "var(--c-cream)",
+    paper: "var(--c-paper)",
+    sage: "var(--c-sage)",
+    sageDk: "var(--c-sageDk)",
+    sageLt: "var(--c-sageLt)",
+    terra: "var(--c-terra)",
+    terraLt: "var(--c-terraLt)",
+    gold: "var(--c-gold)",
+    goldLt: "var(--c-goldLt)",
+    charcoal: "var(--c-charcoal)",
+    grey: "var(--c-grey)",
+    line: "var(--c-line)",
+    blue: "var(--c-blue)",
+    blueLt: "var(--c-blueLt)",
+    red: "var(--c-red)",
+    redLt: "var(--c-redLt)",
+    greenLt: "var(--c-greenLt)"
   };
   function normalize2(s2) {
     return (s2 || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -57235,6 +57235,34 @@ This typically indicates that your device does not have a healthy Internet conne
       if (report) report("none");
       throw e3;
     }
+  }
+  function useThemePreference() {
+    const [pref, setPref] = (0, import_react58.useState)(() => {
+      try {
+        return localStorage.getItem("ss_theme_pref") || "auto";
+      } catch (e3) {
+        return "auto";
+      }
+    });
+    (0, import_react58.useEffect)(() => {
+      try {
+        if (pref === "light" || pref === "dark") document.documentElement.setAttribute("data-theme", pref);
+        else document.documentElement.removeAttribute("data-theme");
+        const isDark = pref === "dark" || pref === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", isDark ? "#1C1B17" : "#7C9473");
+      } catch (e3) {
+      }
+    }, [pref]);
+    const setTheme = (next) => {
+      setPref(next);
+      try {
+        if (next === "auto") localStorage.removeItem("ss_theme_pref");
+        else localStorage.setItem("ss_theme_pref", next);
+      } catch (e3) {
+      }
+    };
+    return [pref, setTheme];
   }
   function usePersistentState(key, initial, onSaved, onBackend) {
     const [value, setValue] = (0, import_react58.useState)(initial);
@@ -58408,7 +58436,7 @@ This typically indicates that your device does not have a healthy Internet conne
         left: 0,
         right: 0,
         marginTop: 4,
-        background: "#fff",
+        background: COLORS.paper,
         border: `1px solid ${COLORS.line}`,
         borderRadius: 10,
         maxHeight: 200,
@@ -58451,7 +58479,7 @@ This typically indicates that your device does not have a healthy Internet conne
   }
   var NAV_GROUPS = [
     { label: "Plan & Track", items: [
-      { id: "plan", label: "12-Week Plan", icon: "\u{1F5D3}\uFE0F" },
+      { id: "plan", label: `${TOTAL_PLAN_WEEKS}-Week Plan`, icon: "\u{1F5D3}\uFE0F" },
       { id: "tracker", label: "Food Tracker", icon: "\u{1F4DD}" },
       { id: "first100", label: "First 100 Foods", icon: "\u{1F4AF}" },
       { id: "milestones", label: "Milestone Timeline", icon: "\u{1F389}" },
@@ -58465,21 +58493,66 @@ This typically indicates that your device does not have a healthy Internet conne
     ] },
     { label: "Reference", items: [
       { id: "home", label: "Welcome", icon: "\u{1F44B}" },
-      { id: "readiness", label: "Signs of Readiness", icon: "\u2705" },
-      { id: "gagchoke", label: "Gagging vs Choking", icon: "\u{1F6A8}" },
       { id: "allergens", label: "Allergen Schedule", icon: "\u{1F95C}" },
-      { id: "cutting", label: "Cutting Guide", icon: "\u{1F52A}" },
-      { id: "portions", label: "Portions by Age", icon: "\u{1F37D}\uFE0F" },
-      { id: "herbs", label: "Herbs & Spices", icon: "\u{1F33F}" },
       { id: "grocery", label: "Grocery Lists", icon: "\u{1F6D2}" },
       { id: "batch", label: "Batch Cooking", icon: "\u{1F9CA}" },
-      { id: "poop", label: "Poop Changes", icon: "\u{1F4A9}" }
+      // Grouped under one collapsible entry — these are pages you lean on
+      // heavily in the first few weeks (readiness, safety, cutting sizes,
+      // portions, seasoning, poop changes) but check only occasionally once
+      // solids are underway, so they no longer need their own top-level row
+      // each. See the "group" handling in Sidebar below.
+      { group: "gettingstarted", label: "Getting Started", icon: "\u{1F331}", items: [
+        { id: "readiness", label: "Signs of Readiness", icon: "\u2705" },
+        { id: "gagchoke", label: "Gagging vs Choking", icon: "\u{1F6A8}" },
+        { id: "cutting", label: "Cutting Guide", icon: "\u{1F52A}" },
+        { id: "portions", label: "Portions by Age", icon: "\u{1F37D}\uFE0F" },
+        { id: "herbs", label: "Herbs & Spices", icon: "\u{1F33F}" },
+        { id: "poop", label: "Poop Changes", icon: "\u{1F4A9}" }
+      ] }
     ] },
     { label: "Data", items: [
       { id: "data", label: "Data & Backup", icon: "\u{1F4BE}" }
     ] }
   ];
+  function useExpandedNavGroups() {
+    const [expanded, setExpanded] = (0, import_react58.useState)(() => {
+      try {
+        return JSON.parse(localStorage.getItem("ss_nav_expanded") || "{}");
+      } catch (e3) {
+        return {};
+      }
+    });
+    const toggle = (groupId) => {
+      setExpanded((prev) => {
+        const next = { ...prev, [groupId]: !prev[groupId] };
+        try {
+          localStorage.setItem("ss_nav_expanded", JSON.stringify(next));
+        } catch (e3) {
+        }
+        return next;
+      });
+    };
+    return [expanded, toggle];
+  }
   function Sidebar({ active, setActive }) {
+    const [expandedGroups, toggleGroup] = useExpandedNavGroups();
+    const navBtnStyle = (isActive) => ({
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      width: "100%",
+      textAlign: "left",
+      background: isActive ? "rgba(255,255,255,0.16)" : "transparent",
+      color: "#fff",
+      border: "none",
+      borderRadius: 8,
+      padding: "10px 12px",
+      marginBottom: 3,
+      cursor: "pointer",
+      fontSize: 13.5,
+      fontWeight: isActive ? 700 : 500,
+      borderLeft: isActive ? `3px solid ${COLORS.gold}` : "3px solid transparent"
+    });
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { width: 250, flex: "0 0 250px", background: COLORS.sageDk, color: "#fff", padding: "22px 14px", position: "sticky", top: 0, height: "100vh", overflowY: "auto", boxSizing: "border-box" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "0 10px 18px 10px" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, letterSpacing: 2, opacity: 0.7, textTransform: "uppercase", marginBottom: 2 }, children: "Starting Solids" }),
@@ -58487,34 +58560,26 @@ This typically indicates that your device does not have a healthy Internet conne
       ] }),
       NAV_GROUPS.map((group) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginBottom: 14 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", opacity: 0.55, padding: "0 12px", marginBottom: 6, fontWeight: 700 }, children: group.label }),
-        group.items.map((s2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "button",
-          {
-            onClick: () => setActive(s2.id),
-            style: {
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              width: "100%",
-              textAlign: "left",
-              background: active === s2.id ? "rgba(255,255,255,0.16)" : "transparent",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "10px 12px",
-              marginBottom: 3,
-              cursor: "pointer",
-              fontSize: 13.5,
-              fontWeight: active === s2.id ? 700 : 500,
-              borderLeft: active === s2.id ? `3px solid ${COLORS.gold}` : "3px solid transparent"
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: s2.icon }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: s2.label })
-            ]
-          },
-          s2.id
-        ))
+        group.items.map((s2) => {
+          if (s2.items) {
+            const isOpen = expandedGroups[s2.group] ?? s2.items.some((sub) => sub.id === active);
+            return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => toggleGroup(s2.group), style: navBtnStyle(false), children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: s2.icon }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { flex: 1 }, children: s2.label }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { opacity: 0.7, fontSize: 11 }, children: isOpen ? "\u25BE" : "\u25B8" })
+              ] }),
+              isOpen && s2.items.map((sub) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setActive(sub.id), style: { ...navBtnStyle(active === sub.id), paddingLeft: 30, fontSize: 13 }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: sub.icon }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: sub.label })
+              ] }, sub.id))
+            ] }, s2.group);
+          }
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setActive(s2.id), style: navBtnStyle(active === s2.id), children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: s2.icon }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: s2.label })
+          ] }, s2.id);
+        })
       ] }, group.label))
     ] });
   }
@@ -58770,7 +58835,7 @@ This typically indicates that your device does not have a healthy Internet conne
       });
     };
     const inputStyle = { padding: 9, fontSize: 13.5, borderRadius: 8, border: `1px solid ${COLORS.line}`, boxSizing: "border-box", fontFamily: "inherit" };
-    const stepperBtnStyle = { width: 28, height: 28, borderRadius: 6, border: `1px solid ${COLORS.line}`, background: "#fff", fontSize: 16, fontWeight: 700, cursor: "pointer", color: COLORS.sageDk, lineHeight: 1 };
+    const stepperBtnStyle = { width: 28, height: 28, borderRadius: 6, border: `1px solid ${COLORS.line}`, background: COLORS.paper, fontSize: 16, fontWeight: 700, cursor: "pointer", color: COLORS.sageDk, lineHeight: 1 };
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHeader, { eyebrow: "Branded Meals", title: "Inventory", dek: "Add what you've purchased so the app can warn you when you're running low on a specific product." }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
@@ -58973,7 +59038,7 @@ This typically indicates that your device does not have a healthy Internet conne
       return [...visibleSchedule].sort((a, b2) => a.date < b2.date ? -1 : 1)[0];
     }, [visibleSchedule]);
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHeader, { eyebrow: "Look It Up", title: "Search a Food", dek: "See every date it's been tried, and every week it's scheduled \u2014 across all 12 weeks at once." }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHeader, { eyebrow: "Look It Up", title: "Search a Food", dek: `See every date it's been tried, and every week it's scheduled \u2014 across all ${TOTAL_PLAN_WEEKS} weeks at once.` }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
         "input",
         {
@@ -59015,7 +59080,7 @@ This typically indicates that your device does not have a healthy Internet conne
             "\u{1F4C5} Scheduled in the Plan ",
             visibleSchedule.length > 0 && `(${visibleSchedule.length})`
           ] }),
-          visibleSchedule.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: COLORS.grey, fontSize: 13.5, fontStyle: "italic" }, children: schedule.length > 0 ? "No upcoming occurrences \u2014 it was scheduled earlier in the plan." : "Not scheduled anywhere in the 12-week plan \u2014 but you could always Swap or Mix-in on the Plan page." }),
+          visibleSchedule.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: COLORS.grey, fontSize: 13.5, fontStyle: "italic" }, children: schedule.length > 0 ? "No upcoming occurrences \u2014 it was scheduled earlier in the plan." : `Not scheduled anywhere in the ${TOTAL_PLAN_WEEKS}-week plan \u2014 but you could always Swap or Mix-in on the Plan page.` }),
           visibleSchedule.map((o2, i2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "7px 0", borderBottom: `1px solid ${COLORS.line}`, fontSize: 13.5 }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("b", { children: [
               "Week ",
@@ -59656,7 +59721,7 @@ This typically indicates that your device does not have a healthy Internet conne
       }
       onSave(value);
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "fixed", inset: 0, background: "rgba(30,26,20,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }, onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: "#fff", borderRadius: 14, padding: 22, width: 480, maxWidth: "100%", maxHeight: "88vh", overflowY: "auto" }, onClick: (e3) => e3.stopPropagation(), children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "fixed", inset: 0, background: "rgba(30,26,20,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }, onClick: onClose, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: COLORS.paper, borderRadius: 14, padding: 22, width: 480, maxWidth: "100%", maxHeight: "88vh", overflowY: "auto" }, onClick: (e3) => e3.stopPropagation(), children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, fontSize: 16 }, children: isEditing ? "\u270F\uFE0F Edit this entry" : "\u{1F4DD} Log this try" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: onClose, style: { cursor: "pointer", fontSize: 18, color: COLORS.grey }, children: "\u2715" })
@@ -59672,7 +59737,7 @@ This typically indicates that your device does not have a healthy Internet conne
       error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 8, fontSize: 12.5, fontWeight: 700, padding: "8px 12px", borderRadius: 8, background: COLORS.redLt, color: COLORS.red }, children: error }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 8, marginTop: 16 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: trySave, style: { background: COLORS.sage, color: "#fff", border: "none", borderRadius: 8, padding: "10px 18px", fontWeight: 700, cursor: "pointer" }, children: isEditing ? "Save Changes" : "Save to Tracker" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: onClose, style: { background: "#fff", border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 18px", fontWeight: 700, cursor: "pointer" }, children: "Cancel" })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: onClose, style: { background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "10px 18px", fontWeight: 700, cursor: "pointer" }, children: "Cancel" })
       ] })
     ] }) });
   }
@@ -59701,7 +59766,7 @@ This typically indicates that your device does not have a healthy Internet conne
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => {
             setDraft(text);
             setEditing(false);
-          }, style: { fontSize: 11, padding: "3px 10px", borderRadius: 6, border: `1px solid ${COLORS.line}`, background: "#fff", cursor: "pointer" }, children: "Cancel" })
+          }, style: { fontSize: 11, padding: "3px 10px", borderRadius: 6, border: `1px solid ${COLORS.line}`, background: COLORS.paper, cursor: "pointer" }, children: "Cancel" })
         ] })
       ] });
     }
@@ -60281,7 +60346,7 @@ This typically indicates that your device does not have a healthy Internet conne
       setAutoSelected(false);
     };
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHeader, { eyebrow: "The Core Plan", title: "The 12-Week Feeding Plan", dek: "Click any pur\xE9e or BLW text to customize it. Use Swap to replace a food, Skip if solids didn't happen that day, Log to send it to the tracker." }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHeader, { eyebrow: "The Core Plan", title: `The ${TOTAL_PLAN_WEEKS}-Week Feeding Plan`, dek: "Click any pur\xE9e or BLW text to customize it. Use Swap to replace a food, Skip if solids didn't happen that day, Log to send it to the tracker." }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { marginBottom: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { style: { fontSize: 12.5, fontWeight: 700, color: COLORS.grey }, children: "Solids start date (used to suggest log dates and jump to the current week):" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { type: "date", value: planStartDate, onChange: (e3) => {
@@ -60881,7 +60946,7 @@ This typically indicates that your device does not have a healthy Internet conne
     if (entries.length === 0) {
       return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHeader, { eyebrow: "Insights", title: "Reports Dashboard", dek: "Visual summary of everything logged in the Food Tracker." }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Callout, { label: "Nothing tracked yet", children: 'Log a few tries in the Food Tracker (or click "Log" from the 12-Week Plan) and this dashboard fills in automatically.' })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Callout, { label: "Nothing tracked yet", children: 'Log a few tries in the Food Tracker (or click "Log" from the Plan page) and this dashboard fills in automatically.' })
       ] });
     }
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
@@ -61113,6 +61178,7 @@ This typically indicates that your device does not have a healthy Internet conne
     ] });
   }
   function DataBackup({ entries, setEntries, overrides, setOverrides, planStartDate, setPlanStartDate, storageBackend, customFoodCategories, setCustomFoodCategories, cloudStatus, lastCloudUpdate, skippedDays, setSkippedDays, planOverrides, setPlanOverrides, dayCustomizations, setDayCustomizations, customMeals, setCustomMeals, inventoryPurchases, setInventoryPurchases, recipeCategoryOverrides, setRecipeCategoryOverrides }) {
+    const [themePref, setThemePref] = useThemePreference();
     const [importText, setImportText] = (0, import_react58.useState)("");
     const [copyStatus, setCopyStatus] = (0, import_react58.useState)("");
     const [forceSyncStatus, setForceSyncStatus] = (0, import_react58.useState)("");
@@ -61183,7 +61249,7 @@ This typically indicates that your device does not have a healthy Internet conne
     };
     const backendInfo = {
       claude: { label: "Claude Artifact Storage", bg: COLORS.greenLt, fg: COLORS.sageDk, note: "Using Anthropic's built-in artifact storage." },
-      local: { label: "Browser Local Storage (fallback)", bg: COLORS.goldLt, fg: "#8a6a1e", note: "Claude's storage wasn't available, so this fell back to your browser's local storage. This is scoped to this exact browser tab/session \u2014 it will NOT survive reopening the file as a new artifact, and won't sync between devices." },
+      local: { label: "Local Device Cache", bg: COLORS.greenLt, fg: COLORS.sageDk, note: "This device also keeps an instant local copy for fast loading with no lag. Cloud Sync below is what actually keeps everything backed up and shared across devices \u2014 this local copy is just a speed layer on top of that." },
       none: { label: "No storage available", bg: COLORS.redLt, fg: COLORS.red, note: "Nothing is persisting right now \u2014 export a backup before you close this." },
       "checking\u2026": { label: "Checking\u2026", bg: COLORS.sageLt, fg: COLORS.grey, note: "" }
     }[storageBackend] || { label: storageBackend, bg: COLORS.sageLt, fg: COLORS.grey, note: "" };
@@ -61194,6 +61260,21 @@ This typically indicates that your device does not have a healthy Internet conne
     }[cloudStatus] || { label: cloudStatus, bg: COLORS.sageLt, fg: COLORS.grey };
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SectionHeader, { eyebrow: "Backup", title: "Data & Backup", dek: "Your tracker entries and prep edits are saved automatically \u2014 but export regularly, especially given the note below." }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { marginBottom: 16 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "\u{1F317} Appearance" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12.5, color: COLORS.grey, marginBottom: 10 }, children: "Auto follows your phone's own light/dark setting \u2014 many phones already schedule that by time of day. Override it here if you'd rather this app always stay one way." }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 8 }, children: [{ id: "auto", label: "\u{1F504} Auto" }, { id: "light", label: "\u2600\uFE0F Light" }, { id: "dark", label: "\u{1F319} Dark" }].map((opt) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setThemePref(opt.id), style: {
+          flex: 1,
+          padding: "10px 12px",
+          borderRadius: 8,
+          fontWeight: 700,
+          fontSize: 13,
+          cursor: "pointer",
+          border: `1.5px solid ${themePref === opt.id ? COLORS.sage : COLORS.line}`,
+          background: themePref === opt.id ? COLORS.sageLt : COLORS.paper,
+          color: themePref === opt.id ? COLORS.sageDk : COLORS.charcoal
+        }, children: opt.label }, opt.id)) })
+      ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { marginBottom: 16, background: COLORS.terraLt, borderColor: COLORS.terra }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "\u{1F503} Not seeing the latest update?" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12.5, color: COLORS.grey, marginBottom: 10 }, children: [
@@ -61204,13 +61285,9 @@ This typically indicates that your device does not have a healthy Internet conne
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "terra", onClick: doForceAppRefresh, children: "\u{1F503} Refresh App to Latest Version" }),
         appRefreshStatus && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, marginTop: 8, fontWeight: 700 }, children: appRefreshStatus })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Callout, { label: "Storage status", tone: storageBackend === "claude" ? "sage" : "terra", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Callout, { label: "Storage status", tone: storageBackend === "none" ? "terra" : "sage", children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginBottom: 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: backendInfo.bg, fg: backendInfo.fg, children: backendInfo.label }) }),
         backendInfo.note
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Callout, { label: "Known limitation", tone: "terra", children: [
-        `If tracked food isn't still here after fully closing and reopening this file, that's very likely because this file is running as a generated artifact rather than a formally "published" one \u2014 persistent storage across separate opens isn't guaranteed in that mode. I can't fix that from inside the app itself. `,
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "The reliable workaround right now: export before you close, import after you reopen." })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { marginBottom: 16, marginTop: 16, background: COLORS.blueLt, borderColor: COLORS.blue }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "\u2601\uFE0F Cloud Sync (shared with your husband)" }),
@@ -61228,7 +61305,7 @@ This typically indicates that your device does not have a healthy Internet conne
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 8 }, children: "Export" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 8, marginBottom: 10 }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: copyToClipboard, style: { background: COLORS.sage, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer" }, children: "\u{1F4CB} Copy to Clipboard" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: downloadFile, style: { background: "#fff", border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer" }, children: "\u2B07 Download .json" })
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: downloadFile, style: { background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer" }, children: "\u2B07 Download .json" })
         ] }),
         copyStatus && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12.5, color: COLORS.terra, marginBottom: 8 }, children: copyStatus }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
@@ -61284,7 +61361,11 @@ This typically indicates that your device does not have a healthy Internet conne
     if (info.status === "completed") {
       return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { marginBottom: 20, background: COLORS.cream }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "\u{1F389} Plan Complete!" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 13.5, color: COLORS.grey }, children: "You've made it through all 12 weeks \u2014 baby's likely on 3 family meals a day now. The Plan page stays available for reference and swaps anytime." })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 13.5, color: COLORS.grey }, children: [
+          "You've made it through all ",
+          TOTAL_PLAN_WEEKS,
+          " weeks \u2014 baby's likely on 3 family meals a day now. The Plan page stays available for reference and swaps anytime."
+        ] })
       ] });
     }
     const { week, dayIndex, dayName } = info;
@@ -61542,8 +61623,8 @@ This typically indicates that your device does not have a healthy Internet conne
           "Starting Solids ",
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: COLORS.terra }, children: "Microsite" })
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { fontStyle: "italic", color: COLORS.grey, fontSize: 15, maxWidth: 560 }, children: "A 12-week handbook for pur\xE9es, baby-led weaning, and every first bite \u2014 interactive, editable, and built to track the whole journey." }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }, children: ["\u{1F5D3}\uFE0F 12-Week Plan", "\u{1F963} Pur\xE9e + BLW", "\u{1F95C} Allergen Schedule", "\u{1F43E} Dog-Friendly Flags", "\u{1F4DD} Multi-Food Tracker", "\u{1F4CA} Reports"].map((t2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 20, padding: "6px 14px", fontSize: 12.5, fontWeight: 700, color: COLORS.sageDk }, children: t2 }, t2)) })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { fontStyle: "italic", color: COLORS.grey, fontSize: 15, maxWidth: 560 }, children: `A ${TOTAL_PLAN_WEEKS}-week handbook for pur\xE9es, baby-led weaning, and every first bite \u2014 interactive, editable, and built to track the whole journey.` }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }, children: [`\u{1F5D3}\uFE0F ${TOTAL_PLAN_WEEKS}-Week Plan`, "\u{1F963} Pur\xE9e + BLW", "\u{1F95C} Allergen Schedule", "\u{1F43E} Dog-Friendly Flags", "\u{1F4DD} Multi-Food Tracker", "\u{1F4CA} Reports"].map((t2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 20, padding: "6px 14px", fontSize: 12.5, fontWeight: 700, color: COLORS.sageDk }, children: t2 }, t2)) })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TodayCard, { planStartDate, planOverrides, overrides, onLog, setActive, dayCustomizations, onJumpToPlan, entries, inventoryPurchases }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TomorrowCard, { planStartDate, planOverrides, overrides, dayCustomizations, onJumpToPlan, entries, inventoryPurchases }),
@@ -61551,7 +61632,7 @@ This typically indicates that your device does not have a healthy Internet conne
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 6 }, children: "\u{1F5D3}\uFE0F Start with the Plan" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 13.5, color: COLORS.grey, marginBottom: 10 }, children: 'Browse all 12 weeks day-by-day. Click "Log" on any meal to send it straight to the tracker.' }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 13.5, color: COLORS.grey, marginBottom: 10 }, children: `Browse all ${TOTAL_PLAN_WEEKS} weeks day-by-day. Click "Log" on any meal to send it straight to the tracker.` }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setActive("plan"), style: { background: COLORS.sage, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer" }, children: "Open the Plan \u2192" })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
