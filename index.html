@@ -16,13 +16,65 @@
 <meta name="theme-color" content="#7C9473" />
 <link rel="icon" href="icon-192.png" />
 
+<!--
+  Dark mode. Every color used throughout desktop.bundle.js and
+  mobile.bundle.js is a CSS custom property (--c-*), not a literal hex
+  value — see the COLORS object at the top of each app file. That means
+  the whole app's palette can be swapped in exactly one place, here,
+  without touching either bundle's thousands of individual style
+  references. Three layers, in increasing precedence:
+    1. :root — the light palette, the default.
+    2. @media (prefers-color-scheme: dark) — swaps to the dark palette
+       whenever the OS/browser is in dark mode, unless overridden below.
+       Many phones already schedule this by time of day, so this alone
+       gives "dark at night" for most people with zero extra UI.
+    3. :root[data-theme="light"|"dark"] — an explicit in-app override
+       (the Appearance control on the Data & Backup page), which always
+       wins over #2 regardless of what the system is set to.
+-->
 <style>
-  html, body { margin: 0; padding: 0; background: #FBF6EC; overscroll-behavior-y: contain; }
+  :root {
+    --c-cream: #FBF6EC; --c-paper: #FFFDF9; --c-sage: #7C9473; --c-sageDk: #4C6444; --c-sageLt: #E7EDE2;
+    --c-terra: #E1794F; --c-terraLt: #FBE4D4; --c-gold: #CE9C3F; --c-goldLt: #F6E9CC;
+    --c-charcoal: #3A332B; --c-grey: #7B7568; --c-line: #E7DECC; --c-blue: #5D82A6; --c-blueLt: #E2ECF3;
+    --c-red: #C0473A; --c-redLt: #F8DFDA; --c-greenLt: #E4F0DE;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --c-cream: #1C1B17; --c-paper: #262420; --c-sage: #8FAE84; --c-sageDk: #A9C79E; --c-sageLt: #30402A;
+      --c-terra: #E8916A; --c-terraLt: #4A2E1E; --c-gold: #D9AF5C; --c-goldLt: #453619;
+      --c-charcoal: #ECE6D9; --c-grey: #A79F8E; --c-line: #3A362C; --c-blue: #7CA0C4; --c-blueLt: #22303C;
+      --c-red: #E2695A; --c-redLt: #45211D; --c-greenLt: #26331F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --c-cream: #1C1B17; --c-paper: #262420; --c-sage: #8FAE84; --c-sageDk: #A9C79E; --c-sageLt: #30402A;
+    --c-terra: #E8916A; --c-terraLt: #4A2E1E; --c-gold: #D9AF5C; --c-goldLt: #453619;
+    --c-charcoal: #ECE6D9; --c-grey: #A79F8E; --c-line: #3A362C; --c-blue: #7CA0C4; --c-blueLt: #22303C;
+    --c-red: #E2695A; --c-redLt: #45211D; --c-greenLt: #26331F;
+  }
+  html, body { margin: 0; padding: 0; background: var(--c-cream); overscroll-behavior-y: contain; }
   #root { min-height: 100vh; }
-  #boot-loading { display:flex; align-items:center; justify-content:center; height:100vh; font-family: -apple-system, system-ui, sans-serif; color:#7B7568; }
+  #boot-loading { display:flex; align-items:center; justify-content:center; height:100vh; font-family: -apple-system, system-ui, sans-serif; color: var(--c-grey); }
 </style>
 </head>
 <body>
+<script>
+  // Applies a saved manual theme override, and tints the browser chrome
+  // (address bar / status bar) to match — before anything paints, so
+  // there's no flash of the wrong theme on load. Runs before <div id="root">
+  // even exists; "auto" (nothing saved) leaves data-theme unset, so the
+  // CSS above just follows the system preference on its own.
+  (function () {
+    try {
+      var pref = localStorage.getItem("ss_theme_pref");
+      if (pref === "light" || pref === "dark") document.documentElement.setAttribute("data-theme", pref);
+      var isDark = pref === "dark" || (pref !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", isDark ? "#1C1B17" : "#7C9473");
+    } catch (e) {}
+  })();
+</script>
 <div id="root"><div id="boot-loading">Loading…</div></div>
 
 <script>

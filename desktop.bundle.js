@@ -57045,23 +57045,23 @@ This typically indicates that your device does not have a healthy Internet conne
   var REACTION_TYPES = ["Skin irritation", "Rash", "Vomiting", "Breathing trouble", "Other"];
   var HERBS_KEYS = ["cinnamon_spice", "cumin_spice", "basil_herb", "garlic_cooked", "olive_oil", "turmeric", "ginger", "oregano", "coconut_oil"];
   var COLORS = {
-    cream: "var(--c-cream)",
-    paper: "var(--c-paper)",
-    sage: "var(--c-sage)",
-    sageDk: "var(--c-sageDk)",
-    sageLt: "var(--c-sageLt)",
-    terra: "var(--c-terra)",
-    terraLt: "var(--c-terraLt)",
-    gold: "var(--c-gold)",
-    goldLt: "var(--c-goldLt)",
-    charcoal: "var(--c-charcoal)",
-    grey: "var(--c-grey)",
-    line: "var(--c-line)",
-    blue: "var(--c-blue)",
-    blueLt: "var(--c-blueLt)",
-    red: "var(--c-red)",
-    redLt: "var(--c-redLt)",
-    greenLt: "var(--c-greenLt)"
+    cream: "var(--c-cream, #FBF6EC)",
+    paper: "var(--c-paper, #FFFDF9)",
+    sage: "var(--c-sage, #7C9473)",
+    sageDk: "var(--c-sageDk, #4C6444)",
+    sageLt: "var(--c-sageLt, #E7EDE2)",
+    terra: "var(--c-terra, #E1794F)",
+    terraLt: "var(--c-terraLt, #FBE4D4)",
+    gold: "var(--c-gold, #CE9C3F)",
+    goldLt: "var(--c-goldLt, #F6E9CC)",
+    charcoal: "var(--c-charcoal, #3A332B)",
+    grey: "var(--c-grey, #7B7568)",
+    line: "var(--c-line, #E7DECC)",
+    blue: "var(--c-blue, #5D82A6)",
+    blueLt: "var(--c-blueLt, #E2ECF3)",
+    red: "var(--c-red, #C0473A)",
+    redLt: "var(--c-redLt, #F8DFDA)",
+    greenLt: "var(--c-greenLt, #E4F0DE)"
   };
   function normalize2(s2) {
     return (s2 || "").trim().toLowerCase().replace(/\s+/g, " ");
