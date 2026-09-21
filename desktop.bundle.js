@@ -57489,7 +57489,7 @@ This typically indicates that your device does not have a healthy Internet conne
     // soy) are registered under whichever of their allergens is introduced
     // latest in this plan — since introduction weeks only increase, gating on
     // the latest one is always at least as safe as gating on all of them.
-    "Tree Nuts": ["almond_butter", "cashew_butter", "walnut_butter", "pistachio_butter", "pecan_butter", "hazelnut_butter", "almondbutter_pear", "sqb_lil_cashew_chicken", "sqb_hazelnut_pumpkin_pie", "sqb_almond_butter_banana", "sqb_apple_curry_chicken", "sqb_mango_coconut_chicken", "sk_chicken_tikka_masala", "sk_coconut_curry_chicken", "sk_smoothie_blueberry_butternut", "sk_smoothie_apple_pumpkin_spice", "sk_smoothie_mango_sweetpotato"],
+    "Tree Nuts": ["almond_butter", "cashew_butter", "walnut_butter", "pistachio_butter", "pecan_butter", "hazelnut_butter", "almondbutter_pear", "coconut_meat", "sqb_lil_cashew_chicken", "sqb_hazelnut_pumpkin_pie", "sqb_almond_butter_banana", "sqb_apple_curry_chicken", "sqb_mango_coconut_chicken", "sk_chicken_tikka_masala", "sk_coconut_curry_chicken", "sk_smoothie_blueberry_butternut", "sk_smoothie_apple_pumpkin_spice", "sk_smoothie_mango_sweetpotato"],
     "Soy": ["tofu", "edamame", "soy_general", "soy_milk", "tofu_broccoli", "recipe_tofu_veggie_stirfry", "recipe_shrimp_tofu_rice_bowl"]
   };
   var FOOD_KEY_TO_ALLERGEN = {};
