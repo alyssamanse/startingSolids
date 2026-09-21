@@ -58353,7 +58353,7 @@ This typically indicates that your device does not have a healthy Internet conne
     ] });
   }
   function SmallBtn({ children, onClick, tone = "sage", style }) {
-    const bg = tone === "sage" ? COLORS.sage : tone === "terra" ? COLORS.terra : "#fff";
+    const bg = tone === "sage" ? COLORS.sage : tone === "terra" ? COLORS.terra : COLORS.paper;
     const fg = tone === "ghost" ? COLORS.charcoal : "#fff";
     const border = tone === "ghost" ? `1px solid ${COLORS.line}` : "none";
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick, style: { background: bg, color: fg, border, borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", ...style }, children });
@@ -58553,7 +58553,7 @@ This typically indicates that your device does not have a healthy Internet conne
       fontWeight: isActive ? 700 : 500,
       borderLeft: isActive ? `3px solid ${COLORS.gold}` : "3px solid transparent"
     });
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { width: 250, flex: "0 0 250px", background: COLORS.sageDk, color: "#fff", padding: "22px 14px", position: "sticky", top: 0, height: "100vh", overflowY: "auto", boxSizing: "border-box" }, children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { width: 250, flex: "0 0 250px", background: COLORS.sage, color: "#fff", padding: "22px 14px", position: "sticky", top: 0, height: "100vh", overflowY: "auto", boxSizing: "border-box" }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "0 10px 18px 10px" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, letterSpacing: 2, opacity: 0.7, textTransform: "uppercase", marginBottom: 2 }, children: "Starting Solids" }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 20, fontWeight: 800 }, children: "Microsite" })
@@ -58651,7 +58651,7 @@ This typically indicates that your device does not have a healthy Internet conne
               " ",
               a.name
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: "#fff", fg: s2.fg, children: s2.label })
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.paper, fg: s2.fg, children: s2.label })
           ] }),
           a.status !== "not-tried" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 11.5, color: COLORS.grey, marginTop: 4 }, children: [
             "Tried ",
@@ -58868,7 +58868,7 @@ This typically indicates that your device does not have a healthy Internet conne
         return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: bg, borderColor: fg }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700 }, children: s2.label }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: "#fff", fg, children: low === "out" ? "Out of stock" : low === "low" ? "Only 1 left" : `${s2.remaining} left` })
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.paper, fg, children: low === "out" ? "Out of stock" : low === "low" ? "Only 1 left" : `${s2.remaining} left` })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.grey, marginTop: 4 }, children: [
             "Purchased ",
@@ -58878,7 +58878,7 @@ This typically indicates that your device does not have a healthy Internet conne
             " \xB7 ",
             s2.scheduledCount > 0 ? `Scheduled ${s2.scheduledCount} more time${s2.scheduledCount === 1 ? "" : "s"} in the plan` : "Not currently scheduled"
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }, children: (inventoryPurchases[s2.key] || []).map((p2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: "#fff", fg: COLORS.grey, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }, children: (inventoryPurchases[s2.key] || []).map((p2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: COLORS.paper, fg: COLORS.grey, children: [
             "+",
             p2.qty,
             " ",
@@ -59727,13 +59727,6 @@ This typically indicates that your device does not have a healthy Internet conne
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: onClose, style: { cursor: "pointer", fontSize: 18, color: COLORS.grey }, children: "\u2715" })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EntryForm, { value, onChange: setValue, foodOptions }),
-      value.brandedProductKey && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginTop: 10, padding: 10, background: COLORS.sageLt, borderRadius: 8 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 700, color: COLORS.sageDk, marginBottom: 6 }, children: "HOW MUCH OF THE CONTAINER?" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: (value.brandedQty ?? 1) === 1 ? "sage" : "ghost", onClick: () => setValue((v2) => ({ ...v2, brandedQty: 1 })), children: "Whole container" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: (value.brandedQty ?? 1) === 0.5 ? "sage" : "ghost", onClick: () => setValue((v2) => ({ ...v2, brandedQty: 0.5 })), children: "Half" })
-        ] })
-      ] }),
       error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 8, fontSize: 12.5, fontWeight: 700, padding: "8px 12px", borderRadius: 8, background: COLORS.redLt, color: COLORS.red }, children: error }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 8, marginTop: 16 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: trySave, style: { background: COLORS.sage, color: "#fff", border: "none", borderRadius: 8, padding: "10px 18px", fontWeight: 700, cursor: "pointer" }, children: isEditing ? "Save Changes" : "Save to Tracker" }),
@@ -59918,7 +59911,7 @@ This typically indicates that your device does not have a healthy Internet conne
       const blwLogFoods = blwOverrideVariant ? decomposeToLabels(custom.blwOverrideKey) : decomposeToLabels(key);
       const blwLogNotes = blwOverrideVariant ? blwOverrideVariant.blw : v2.blw;
       return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: COLORS.paper, borderRadius: 10, padding: 12, flex: "1 1 320px", minWidth: 280, border: `1px solid ${COLORS.line}` }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageDk, fg: "#fff", children: (mealSlots.find((m2) => m2.slot === slot) || {}).label || slot }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sage, fg: "#fff", children: (mealSlots.find((m2) => m2.slot === slot) || {}).label || slot }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700, marginTop: 6 }, children: v2.label }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrandedIngredientsLine, { foodKey: key }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventoryStatusPill, { foodKey: key, inventoryPurchases, entries }),
@@ -60255,7 +60248,7 @@ This typically indicates that your device does not have a healthy Internet conne
       ] }, day + i2);
     });
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginBottom: 18 }, children: [
-      mealLabel && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageDk, fg: "#fff", children: mealLabel }),
+      mealLabel && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sage, fg: "#fff", children: mealLabel }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("table", { style: { width: "100%", borderCollapse: "collapse", marginTop: 8 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("tr", { children: ["Day", "Featured Food", "Pur\xE9e Option", "BLW Option"].map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", { style: { background: COLORS.sageLt, color: COLORS.sageDk, textAlign: "left", padding: "6px 8px", fontSize: 11, textTransform: "uppercase" }, children: h }, h)) }) }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)("tbody", { children: rows })
@@ -61404,7 +61397,7 @@ This typically indicates that your device does not have a healthy Internet conne
         const blwPrepText = blwOverrideVariant ? blwOverrideVariant.blwPrep : v2.blwPrep;
         const blwLogFoods = blwOverrideVariant ? decomposeToLabels(custom.blwOverrideKey) : decomposeToLabels(key);
         return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: COLORS.paper, borderRadius: 10, padding: 12, marginBottom: mi < meals.length - 1 ? 10 : 0 }, children: [
-          m2.label && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageDk, fg: "#fff", children: m2.label }),
+          m2.label && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sage, fg: "#fff", children: m2.label }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontWeight: 800, fontSize: 15, marginTop: m2.label ? 6 : 0 }, children: [
             v2.label,
             blwOverrideVariant ? ` (BLW: ${blwOverrideVariant.label})` : ""
