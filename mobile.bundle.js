@@ -57260,6 +57260,17 @@ This typically indicates that your device does not have a healthy Internet conne
     }
     return null;
   }
+  function isPlannedFoodLoggedOnDate(key, dateStr, entries) {
+    if (!key || !dateStr || !Array.isArray(entries)) return false;
+    const targetLabels = decomposeToLabels(key);
+    if (targetLabels.length === 0) return false;
+    return entries.some((e3) => {
+      if (e3.date !== dateStr) return false;
+      if (e3.brandedProductKey === key || inferBrandedKeyForEntry(e3) === key) return true;
+      const foods = Array.isArray(e3.foods) ? e3.foods : typeof e3.food === "string" ? [e3.food] : [];
+      return targetLabels.some((l2) => foods.includes(l2));
+    });
+  }
   function computeInventoryStatus(brandedKey, purchases, entries) {
     const purchased = (purchases || []).reduce((sum, p2) => sum + (p2.qty || 0), 0);
     const consumed = entries.filter((e3) => e3.brandedProductKey === brandedKey).reduce((sum, e3) => sum + (e3.brandedQty || 1), 0);
@@ -58026,7 +58037,7 @@ This typically indicates that your device does not have a healthy Internet conne
     };
     const logMeal = (key, prep) => {
       const v2 = getVariant(key, 0, overrides);
-      onLog(emptyEntry({ foods: decomposeToLabels(key), date: todayStr(), prep, notes: prep === "Pur\xE9e" ? v2.puree : v2.blw, ...brandedTag(key) }));
+      onLog(emptyEntry({ foods: decomposeToLabels(key), date: todayStr(), prep, notes: "", ...brandedTag(key) }));
     };
     const inputStyle = { width: "100%", padding: 10, fontSize: 15, borderRadius: 8, border: `1px solid ${COLORS.line}`, boxSizing: "border-box", marginBottom: 8, fontFamily: "inherit" };
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
@@ -58850,6 +58861,7 @@ This typically indicates that your device does not have a healthy Internet conne
     const pureeLogNotes = mixInVariant ? `${v2.puree} \u2014 blended with ${mixInVariant.label}: ${mixInVariant.puree}` : v2.puree;
     const blwLogFoods = blwOverrideVariant ? decomposeToLabels(custom.blwOverrideKey) : decomposeToLabels(foodKey);
     const blwLogNotes = blwOverrideVariant ? blwOverrideVariant.blw : v2.blw;
+    const isLogged = isPlannedFoodLoggedOnDate(foodKey, suggestedDate, entries);
     const pickerBlock = (mode, helpText) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginBottom: 12 }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FoodAutocomplete, { value: pickerInput, onChange: setPickerInput, onSelect: (f) => pickFood(mode, f), onEnter: () => pickFood(mode, pickerInput), options: swapOptions, placeholder: "Search foods\u2026" }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10.5, color: COLORS.grey, marginTop: 4 }, children: helpText }),
@@ -58913,7 +58925,10 @@ This typically indicates that your device does not have a healthy Internet conne
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrandedIngredientsLine, { foodKey }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventoryStatusPill, { foodKey, inventoryPurchases, entries })
         ] }),
-        v2.isCustomized && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "ghost", onClick: resetOverride, style: { fontSize: 10, padding: "2px 8px", minHeight: "auto" }, children: "Reset" })
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
+          isLogged && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { title: "Already logged", style: { color: COLORS.sage, fontSize: 16 }, children: "\u2705" }),
+          v2.isCustomized && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "ghost", onClick: resetOverride, style: { fontSize: 10, padding: "2px 8px", minHeight: "auto" }, children: "Reset" })
+        ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8, alignItems: "center" }, children: [
         v2.iron && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk, children: "\u25CF iron-rich" }),
@@ -58993,7 +59008,7 @@ This typically indicates that your device does not have a healthy Internet conne
           ] }))
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: pureeLogFoods, date: suggestedDate, prep: "Pur\xE9e", notes: pureeLogNotes, ...brandedTag(foodKey) })), children: "\u{1F4DD} Log Pur\xE9e" }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: pureeLogFoods, date: suggestedDate, prep: "Pur\xE9e", notes: "", ...brandedTag(foodKey) })), children: "\u{1F4DD} Log Pur\xE9e" }),
           mixInVariant ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "ghost", onClick: removeMixIn, children: "\u2715 Remove mix-in" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "ghost", onClick: () => openPicker("mixin"), children: "\u{1F944} Mix in a food" })
         ] }),
         activePicker === "mixin" && pickerBlock("mixin", "Pur\xE9e will combine both foods and log both when you tap Log Pur\xE9e.")
@@ -59056,7 +59071,7 @@ This typically indicates that your device does not have a healthy Internet conne
           ] }))
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: blwLogFoods, date: suggestedDate, prep: DATA.FOOD_LIB[custom.blwOverrideKey || foodKey]?.defaultPrepType || "BLW / Finger food", notes: blwLogNotes, ...brandedTag(custom.blwOverrideKey || foodKey) })), children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: blwLogFoods, date: suggestedDate, prep: DATA.FOOD_LIB[custom.blwOverrideKey || foodKey]?.defaultPrepType || "BLW / Finger food", notes: "", ...brandedTag(custom.blwOverrideKey || foodKey) })), children: [
             "\u{1F4DD} ",
             DATA.FOOD_LIB[custom.blwOverrideKey || foodKey]?.noPuree ? "Log" : "Log BLW"
           ] }),
@@ -59356,15 +59371,19 @@ This typically indicates that your device does not have a healthy Internet conne
           const foodLib = DATA.FOOD_LIB[key];
           const noPuree = foodLib?.noPuree;
           const swapping = activeSwap && activeSwap.week === week && activeSwap.dayIndex === dayIndex && activeSwap.slot === slot;
+          const isLogged = isPlannedFoodLoggedOnDate(key, toLocalDateStr(date2), entries);
           return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginTop: 8, paddingTop: 8, borderTop: `1px solid ${COLORS.line}` }, children: [
             slot !== "days" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, fontWeight: 700, color: COLORS.sageDk, textTransform: "uppercase", marginBottom: 3 }, children: SLOT_LABELS[slot] || slot }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700, fontSize: 13 }, children: v2.label }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }, children: [
+              v2.label,
+              isLogged && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { title: "Already logged", style: { color: COLORS.sage, fontSize: 13 }, children: "\u2705" })
+            ] }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrandedIngredientsLine, { foodKey: key }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventoryStatusPill, { foodKey: key, inventoryPurchases, entries }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }, children: [
-              noPuree ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: decomposeToLabels(key), date: toLocalDateStr(date2), prep: foodLib.defaultPrepType, notes: v2.blw, ...brandedTag(key) })), children: "\u{1F4DD} Log" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: decomposeToLabels(key), date: toLocalDateStr(date2), prep: "Pur\xE9e", notes: v2.puree, ...brandedTag(key) })), children: "\u{1F4DD} Log Pur\xE9e" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: decomposeToLabels(key), date: toLocalDateStr(date2), prep: "BLW / Finger food", notes: v2.blw, ...brandedTag(key) })), children: "\u{1F4DD} Log BLW" })
+              noPuree ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: decomposeToLabels(key), date: toLocalDateStr(date2), prep: foodLib.defaultPrepType, notes: "", ...brandedTag(key) })), children: "\u{1F4DD} Log" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: decomposeToLabels(key), date: toLocalDateStr(date2), prep: "Pur\xE9e", notes: "", ...brandedTag(key) })), children: "\u{1F4DD} Log Pur\xE9e" }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: decomposeToLabels(key), date: toLocalDateStr(date2), prep: "BLW / Finger food", notes: "", ...brandedTag(key) })), children: "\u{1F4DD} Log BLW" })
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "ghost", onClick: () => {
                 setActiveSwap(swapping ? null : { week, dayIndex, slot });
@@ -60193,8 +60212,12 @@ This typically indicates that your device does not have a healthy Internet conne
         const blwDesc = blwOverrideVariant ? blwOverrideVariant.blw : v2.blw;
         const blwPrepText = blwOverrideVariant ? blwOverrideVariant.blwPrep : v2.blwPrep;
         const blwLogFoods = blwOverrideVariant ? decomposeToLabels(custom.blwOverrideKey) : decomposeToLabels(key);
+        const isLogged = isPlannedFoodLoggedOnDate(key, todayStr(), entries);
         return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: COLORS.paper, borderRadius: 10, padding: 12, marginBottom: mi < meals.length - 1 ? 10 : 0 }, children: [
-          m2.label && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sage, fg: "#fff", children: m2.label }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+            m2.label ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sage, fg: "#fff", children: m2.label }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {}),
+            isLogged && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { title: "Already logged", style: { color: COLORS.sage, fontSize: 14, fontWeight: 800 }, children: "\u2705 Logged" })
+          ] }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontWeight: 800, fontSize: 15, marginTop: m2.label ? 6 : 0 }, children: [
             v2.label,
             blwOverrideVariant ? ` (BLW: ${blwOverrideVariant.label})` : ""
@@ -60249,8 +60272,8 @@ This typically indicates that your device does not have a healthy Internet conne
             ] })
           ] }) }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" }, children: [
-            !DATA.FOOD_LIB[key]?.noPuree && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: pureeLogFoods, date: todayStr(), prep: "Pur\xE9e", notes: pureeDesc, ...brandedTag(key) })), children: "\u{1F4DD} Log Pur\xE9e" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: blwLogFoods, date: todayStr(), prep: DATA.FOOD_LIB[custom.blwOverrideKey || key]?.defaultPrepType || "BLW / Finger food", notes: blwDesc, ...brandedTag(custom.blwOverrideKey || key) })), children: [
+            !DATA.FOOD_LIB[key]?.noPuree && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: pureeLogFoods, date: todayStr(), prep: "Pur\xE9e", notes: "", ...brandedTag(key) })), children: "\u{1F4DD} Log Pur\xE9e" }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SmallBtn, { onClick: () => onLog(emptyEntry({ foods: blwLogFoods, date: todayStr(), prep: DATA.FOOD_LIB[custom.blwOverrideKey || key]?.defaultPrepType || "BLW / Finger food", notes: "", ...brandedTag(custom.blwOverrideKey || key) })), children: [
               "\u{1F4DD} ",
               DATA.FOOD_LIB[custom.blwOverrideKey || key]?.noPuree ? "Log" : "Log BLW"
             ] })
@@ -60362,13 +60385,13 @@ This typically indicates that your device does not have a healthy Internet conne
       const sugg = ALLERGEN_ROTATION_SUGGESTIONS[allergenName];
       if (!sugg) return;
       const v2 = getVariant(sugg.comboKey, 0, overrides);
-      onLog(emptyEntry({ foods: decomposeToLabels(sugg.comboKey), date: todayStr(), prep: "Pur\xE9e", notes: v2.puree, ...brandedTag(sugg.comboKey) }));
+      onLog(emptyEntry({ foods: decomposeToLabels(sugg.comboKey), date: todayStr(), prep: "Pur\xE9e", notes: "", ...brandedTag(sugg.comboKey) }));
     };
     const logStandalone = (allergenName) => {
       const sugg = ALLERGEN_ROTATION_SUGGESTIONS[allergenName];
       if (!sugg) return;
       const v2 = getVariant(sugg.anchorKey, 0, overrides);
-      onLog(emptyEntry({ foods: [v2.label], date: todayStr(), prep: "Pur\xE9e", notes: v2.puree, ...brandedTag(sugg.anchorKey) }));
+      onLog(emptyEntry({ foods: [v2.label], date: todayStr(), prep: "Pur\xE9e", notes: "", ...brandedTag(sugg.anchorKey) }));
     };
     return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: needsAttention.length > 0 ? COLORS.goldLt : COLORS.sageLt, borderColor: needsAttention.length > 0 ? "#c9a53b" : COLORS.sage }, children: [
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, fontSize: 14, marginBottom: 4 }, children: "\u{1F501} Allergen Rotation" }),
