@@ -57679,6 +57679,24 @@ This typically indicates that your device does not have a healthy Internet conne
     const leastFavorites = [...ranked].sort((a, b2) => a.avg - b2.avg || b2.count - a.count).slice(0, 10);
     return { favorites, leastFavorites, minTries };
   }
+  function computeBrandedFavorites(entries, minTries) {
+    minTries = minTries || 2;
+    const stats = {};
+    entries.forEach((e3) => {
+      if (typeof e3.response !== "number") return;
+      const key = inferBrandedKeyForEntry(e3);
+      if (!key) return;
+      const label = DATA.FOOD_LIB[key]?.label;
+      if (!label) return;
+      if (!stats[key]) stats[key] = { key, label, sum: 0, count: 0 };
+      stats[key].sum += e3.response;
+      stats[key].count += 1;
+    });
+    const ranked = Object.values(stats).filter((s2) => s2.count >= minTries).map((s2) => ({ ...s2, avg: s2.sum / s2.count }));
+    const favorites = [...ranked].sort((a, b2) => b2.avg - a.avg || b2.count - a.count).slice(0, 10);
+    const leastFavorites = [...ranked].sort((a, b2) => a.avg - b2.avg || b2.count - a.count).slice(0, 10);
+    return { favorites, leastFavorites, minTries };
+  }
   function computeDiningSafety(entries) {
     return DATA.ALLERGENS.map((a) => {
       const keys = ALLERGEN_MAP[a.name] || [];
@@ -60911,6 +60929,7 @@ This typically indicates that your device does not have a healthy Internet conne
     const nameMap = (0, import_react58.useMemo)(() => canonicalNameMap(entries), [entries]);
     const variety = (0, import_react58.useMemo)(() => computeVarietyPattern(entries, 7), [entries]);
     const favorites = (0, import_react58.useMemo)(() => computeFavorites(entries, 2), [entries]);
+    const brandedFavorites = (0, import_react58.useMemo)(() => computeBrandedFavorites(entries, 2), [entries]);
     const stats = (0, import_react58.useMemo)(() => {
       const byFood = {};
       entries.forEach((e3) => e3.foods.forEach((f) => {
@@ -61038,6 +61057,40 @@ This typically indicates that your device does not have a healthy Internet conne
                 "x)"
               ] })
             ] }, f.label))
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { marginBottom: 20 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 4 }, children: "\u{1F6D2} Favorite Branded Meals" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.grey, marginBottom: 12 }, children: [
+          "Ranked by logged reactions to whole pouches/meals (not their individual ingredients) \u2014 handy for what to restock vs. skip next time you're shopping. Products logged fewer than ",
+          brandedFavorites.minTries,
+          " times aren't ranked yet."
+        ] }),
+        brandedFavorites.favorites.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: COLORS.grey, fontSize: 13, fontStyle: "italic" }, children: "Not enough repeated logs of a branded product yet to rank favorites." }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 700, color: COLORS.sageDk, marginBottom: 6, textTransform: "uppercase" }, children: "Buy Again" }),
+            brandedFavorites.favorites.slice(0, 5).map((f) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 13, padding: "4px 0", borderBottom: `1px solid ${COLORS.line}` }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: f.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: COLORS.grey }, children: [
+                f.avg.toFixed(1),
+                "\u2605 (",
+                f.count,
+                "x)"
+              ] })
+            ] }, f.key))
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 700, color: COLORS.red, marginBottom: 6, textTransform: "uppercase" }, children: "Skip Next Time" }),
+            brandedFavorites.leastFavorites.slice(0, 5).map((f) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 13, padding: "4px 0", borderBottom: `1px solid ${COLORS.line}` }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: f.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: COLORS.grey }, children: [
+                f.avg.toFixed(1),
+                "\u2605 (",
+                f.count,
+                "x)"
+              ] })
+            ] }, f.key))
           ] })
         ] })
       ] }),
