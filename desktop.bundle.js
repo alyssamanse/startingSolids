@@ -57660,6 +57660,13 @@ This typically indicates that your device does not have a healthy Internet conne
   function getSwapOptionLabels(slot, weekNum) {
     return getSwapOptionKeys(slot, weekNum).map((k2) => DATA.FOOD_LIB[k2].label).sort();
   }
+  function splitFavorites(ranked) {
+    const sorted = [...ranked].sort((a, b2) => b2.avg - a.avg || b2.count - a.count);
+    const half = Math.ceil(sorted.length / 2);
+    const favorites = sorted.slice(0, half).slice(0, 10);
+    const leastFavorites = sorted.slice(half).sort((a, b2) => a.avg - b2.avg || b2.count - a.count).slice(0, 10);
+    return { favorites, leastFavorites };
+  }
   function computeFavorites(entries, minTries) {
     minTries = minTries || 2;
     const stats = {};
@@ -57675,8 +57682,7 @@ This typically indicates that your device does not have a healthy Internet conne
       });
     });
     const ranked = Object.values(stats).filter((s2) => s2.count >= minTries).map((s2) => ({ ...s2, avg: s2.sum / s2.count }));
-    const favorites = [...ranked].sort((a, b2) => b2.avg - a.avg || b2.count - a.count).slice(0, 10);
-    const leastFavorites = [...ranked].sort((a, b2) => a.avg - b2.avg || b2.count - a.count).slice(0, 10);
+    const { favorites, leastFavorites } = splitFavorites(ranked);
     return { favorites, leastFavorites, minTries };
   }
   function computeBrandedFavorites(entries, minTries) {
@@ -57693,8 +57699,7 @@ This typically indicates that your device does not have a healthy Internet conne
       stats[key].count += 1;
     });
     const ranked = Object.values(stats).filter((s2) => s2.count >= minTries).map((s2) => ({ ...s2, avg: s2.sum / s2.count }));
-    const favorites = [...ranked].sort((a, b2) => b2.avg - a.avg || b2.count - a.count).slice(0, 10);
-    const leastFavorites = [...ranked].sort((a, b2) => a.avg - b2.avg || b2.count - a.count).slice(0, 10);
+    const { favorites, leastFavorites } = splitFavorites(ranked);
     return { favorites, leastFavorites, minTries };
   }
   function computeDiningSafety(entries) {
