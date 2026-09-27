@@ -56525,6 +56525,19 @@ This typically indicates that your device does not have a healthy Internet conne
   Object.entries(ALLERGEN_MAP).forEach(([name3, keys]) => keys.forEach((k2) => {
     FOOD_KEY_TO_ALLERGEN[k2] = name3;
   }));
+  var TREE_NUT_SUBGROUPS = {
+    "Almond": ["almond_butter", "almondbutter_pear", "sqb_almond_butter_banana"],
+    "Cashew": ["cashew_butter", "sqb_lil_cashew_chicken"],
+    "Walnut": ["walnut_butter"],
+    "Pistachio": ["pistachio_butter"],
+    "Pecan": ["pecan_butter"],
+    "Hazelnut": ["hazelnut_butter", "sqb_hazelnut_pumpkin_pie"],
+    "Coconut": ["coconut_meat", "sqb_apple_curry_chicken", "sqb_mango_coconut_chicken", "sk_chicken_tikka_masala", "sk_coconut_curry_chicken", "sk_smoothie_blueberry_butternut", "sk_smoothie_apple_pumpkin_spice", "sk_smoothie_mango_sweetpotato"]
+  };
+  var FOOD_KEY_TO_SPECIFIC_ALLERGEN = {};
+  Object.entries(TREE_NUT_SUBGROUPS).forEach(([specific, keys]) => keys.forEach((k2) => {
+    FOOD_KEY_TO_SPECIFIC_ALLERGEN[k2] = specific;
+  }));
   var ALLERGEN_ROTATION_SUGGESTIONS = {
     "Peanut": { anchorKey: "peanut_butter", comboKey: "peanutbutter_banana" },
     "Egg": { anchorKey: "egg", comboKey: "egg_spinach" },
@@ -56745,7 +56758,8 @@ This typically indicates that your device does not have a healthy Internet conne
   function computeAllergenExposureForFood(foodKey, entries) {
     const allergenName = FOOD_KEY_TO_ALLERGEN[foodKey];
     if (!allergenName) return null;
-    const keys = ALLERGEN_MAP[allergenName] || [];
+    const specific = FOOD_KEY_TO_SPECIFIC_ALLERGEN[foodKey];
+    const keys = specific ? Object.keys(FOOD_KEY_TO_SPECIFIC_ALLERGEN).filter((k2) => FOOD_KEY_TO_SPECIFIC_ALLERGEN[k2] === specific) : ALLERGEN_MAP[allergenName] || [];
     const labelSet = new Set(keys.map((k2) => DATA.FOOD_LIB[k2]?.label).filter(Boolean).map(normalize2));
     const matching = entries.filter((e3) => e3.foods.some((f) => labelSet.has(normalize2(f))));
     return { allergenName, total: matching.length, hasConcerning: matching.some((e3) => e3.concerning) };
