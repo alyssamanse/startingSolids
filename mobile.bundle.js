@@ -56212,6 +56212,10 @@ This typically indicates that your device does not have a healthy Internet conne
     if (base.garlicVariant && variantIndex === 1) {
       return { status: "no", note: "This herbed prep uses garlic, which is toxic to dogs \u2014 even though the plain version is fine." };
     }
+    const components = BRANDED_PRODUCT_COMPONENTS[foodKey];
+    if (components && base.status === "caution" && components.length > 0 && components.every((k2) => DOG_FRIENDLY[k2]?.status === "yes")) {
+      return { status: "caution-safe", note: base.note };
+    }
     return base;
   }
   function toLocalDateStr(d) {
@@ -57369,6 +57373,7 @@ This typically indicates that your device does not have a healthy Internet conne
   }
   function dogBadgeStyle(status) {
     if (status === "yes") return { bg: COLORS.greenLt, fg: COLORS.sageDk, label: "\u{1F43E} Dog-OK" };
+    if (status === "caution-safe") return { bg: COLORS.greenLt, fg: "#8a6a1e", label: "\u{1F43E} Caution \u2014 OK" };
     if (status === "caution") return { bg: COLORS.goldLt, fg: "#8a6a1e", label: "\u{1F43E} Caution" };
     if (status === "no") return { bg: COLORS.redLt, fg: COLORS.red, label: "\u{1F43E} Not for Dog" };
     return { bg: COLORS.sageLt, fg: COLORS.grey, label: "\u{1F43E} \u2014" };
