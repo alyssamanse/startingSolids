@@ -7214,50 +7214,19 @@
     }
   });
 
-  // node_modules/react-dom/client.js
-  var require_client = __commonJS({
-    "node_modules/react-dom/client.js"(exports) {
-      "use strict";
-      var m2 = require_react_dom();
-      if (true) {
-        exports.createRoot = m2.createRoot;
-        exports.hydrateRoot = m2.hydrateRoot;
-      } else {
-        i2 = m2.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-        exports.createRoot = function(c2, o2) {
-          i2.usingClientEntryPoint = true;
-          try {
-            return m2.createRoot(c2, o2);
-          } finally {
-            i2.usingClientEntryPoint = false;
-          }
-        };
-        exports.hydrateRoot = function(c2, h, o2) {
-          i2.usingClientEntryPoint = true;
-          try {
-            return m2.hydrateRoot(c2, h, o2);
-          } finally {
-            i2.usingClientEntryPoint = false;
-          }
-        };
-      }
-      var i2;
-    }
-  });
-
   // node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
   var require_use_sync_external_store_shim_production = __commonJS({
     "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js"(exports) {
       "use strict";
-      var React46 = require_react();
+      var React45 = require_react();
       function is3(x3, y3) {
         return x3 === y3 && (0 !== x3 || 1 / x3 === 1 / y3) || x3 !== x3 && y3 !== y3;
       }
       var objectIs = "function" === typeof Object.is ? Object.is : is3;
-      var useState15 = React46.useState;
-      var useEffect21 = React46.useEffect;
-      var useLayoutEffect9 = React46.useLayoutEffect;
-      var useDebugValue2 = React46.useDebugValue;
+      var useState15 = React45.useState;
+      var useEffect21 = React45.useEffect;
+      var useLayoutEffect9 = React45.useLayoutEffect;
+      var useDebugValue2 = React45.useDebugValue;
       function useSyncExternalStore$2(subscribe, getSnapshot) {
         var value = getSnapshot(), _useState = useState15({ inst: { value, getSnapshot } }), inst = _useState[0].inst, forceUpdate = _useState[1];
         useLayoutEffect9(
@@ -7294,7 +7263,7 @@
         return getSnapshot();
       }
       var shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
-      exports.useSyncExternalStore = void 0 !== React46.useSyncExternalStore ? React46.useSyncExternalStore : shim;
+      exports.useSyncExternalStore = void 0 !== React45.useSyncExternalStore ? React45.useSyncExternalStore : shim;
     }
   });
 
@@ -7314,17 +7283,17 @@
   var require_with_selector_production = __commonJS({
     "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js"(exports) {
       "use strict";
-      var React46 = require_react();
+      var React45 = require_react();
       var shim = require_shim();
       function is3(x3, y3) {
         return x3 === y3 && (0 !== x3 || 1 / x3 === 1 / y3) || x3 !== x3 && y3 !== y3;
       }
       var objectIs = "function" === typeof Object.is ? Object.is : is3;
       var useSyncExternalStore2 = shim.useSyncExternalStore;
-      var useRef22 = React46.useRef;
-      var useEffect21 = React46.useEffect;
-      var useMemo13 = React46.useMemo;
-      var useDebugValue2 = React46.useDebugValue;
+      var useRef22 = React45.useRef;
+      var useEffect21 = React45.useEffect;
+      var useMemo13 = React45.useMemo;
+      var useDebugValue2 = React45.useDebugValue;
       exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual2) {
         var instRef = useRef22(null);
         if (null === instRef.current) {
@@ -7395,16 +7364,16 @@
   var require_use_sync_external_store_with_selector_production = __commonJS({
     "node_modules/use-sync-external-store/cjs/use-sync-external-store-with-selector.production.js"(exports) {
       "use strict";
-      var React46 = require_react();
+      var React45 = require_react();
       function is3(x3, y3) {
         return x3 === y3 && (0 !== x3 || 1 / x3 === 1 / y3) || x3 !== x3 && y3 !== y3;
       }
       var objectIs = "function" === typeof Object.is ? Object.is : is3;
-      var useSyncExternalStore2 = React46.useSyncExternalStore;
-      var useRef22 = React46.useRef;
-      var useEffect21 = React46.useEffect;
-      var useMemo13 = React46.useMemo;
-      var useDebugValue2 = React46.useDebugValue;
+      var useSyncExternalStore2 = React45.useSyncExternalStore;
+      var useRef22 = React45.useRef;
+      var useEffect21 = React45.useEffect;
+      var useMemo13 = React45.useMemo;
+      var useDebugValue2 = React45.useDebugValue;
       exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual2) {
         var instRef = useRef22(null);
         if (null === instRef.current) {
@@ -8771,10 +8740,6 @@
       }
     }
   });
-
-  // src/desktop-entry.jsx
-  var import_react59 = __toESM(require_react());
-  var import_client = __toESM(require_client());
 
   // src/DesktopApp.jsx
   var import_react58 = __toESM(require_react());
@@ -58294,6 +58259,22 @@ This typically indicates that your device does not have a healthy Internet conne
       return targetLabels.some((l2) => foods.includes(l2));
     });
   }
+  function computeTimesTried(foodKey, entries) {
+    if (!foodKey || !Array.isArray(entries) || entries.length === 0) return 0;
+    if (BRANDED_PRODUCT_COMPONENTS[foodKey]) {
+      return entries.filter((e3) => e3.brandedProductKey === foodKey || inferBrandedKeyForEntry(e3) === foodKey).length;
+    }
+    if (COMBO_COMPONENTS[foodKey] || RECIPE_COMPONENTS[foodKey] || CUSTOM_MEAL_COMPONENTS[foodKey]) {
+      const targetLabels = decomposeToLabels(foodKey);
+      if (targetLabels.length === 0) return 0;
+      const targetSet = targetLabels.map(normalize2).sort().join("|");
+      return entries.filter((e3) => Array.isArray(e3.foods) && e3.foods.length === targetLabels.length && e3.foods.map(normalize2).sort().join("|") === targetSet).length;
+    }
+    const label = DATA.FOOD_LIB[foodKey]?.label;
+    if (!label) return 0;
+    const normLabel = normalize2(label);
+    return entries.filter((e3) => Array.isArray(e3.foods) && e3.foods.some((f) => normalize2(f) === normLabel)).length;
+  }
   function computeInventoryStatus(brandedKey, purchases, entries) {
     const purchased = (purchases || []).reduce((sum, p2) => sum + (p2.qty || 0), 0);
     const consumed = entries.filter((e3) => e3.brandedProductKey === brandedKey).reduce((sum, e3) => sum + (e3.brandedQty || 1), 0);
@@ -58541,6 +58522,15 @@ This typically indicates that your device does not have a healthy Internet conne
       "x"
     ] });
   }
+  function TimesTriedPill({ foodKey, entries }) {
+    const count = computeTimesTried(foodKey, entries);
+    if (count === 0) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.blueLt, fg: COLORS.blue, children: "\u{1F37D}\uFE0F first time" });
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: COLORS.blueLt, fg: COLORS.blue, children: [
+      "\u{1F37D}\uFE0F tried ",
+      count,
+      "x"
+    ] });
+  }
   var NAV_GROUPS = [
     { label: "Plan & Track", items: [
       { id: "plan", label: `${TOTAL_PLAN_WEEKS}-Week Plan`, icon: "\u{1F5D3}\uFE0F" },
@@ -58728,7 +58718,7 @@ This typically indicates that your device does not have a healthy Internet conne
       })
     ] });
   }
-  function RecipeCatalogPage({ planOverrides, setPlanOverrides, planStartDate, customMeals, overrides, setOverrides, recipeCategoryOverrides, setRecipeCategoryOverrides }) {
+  function RecipeCatalogPage({ planOverrides, setPlanOverrides, planStartDate, customMeals, overrides, setOverrides, recipeCategoryOverrides, setRecipeCategoryOverrides, entries }) {
     const [query, setQuery] = (0, import_react58.useState)("");
     const [categoryFilter, setCategoryFilter] = (0, import_react58.useState)(null);
     const [schedulingKey, setSchedulingKey] = (0, import_react58.useState)(null);
@@ -58798,6 +58788,7 @@ This typically indicates that your device does not have a healthy Internet conne
               ] }),
               /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 5, marginTop: 6, flexWrap: "wrap" }, children: [
                 /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk, children: r3.prepType }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TimesTriedPill, { foodKey: r3.key, entries }),
                 cats.map((cat) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.terraLt, fg: COLORS.terra, children: cat }, cat)),
                 DATA.FOOD_LIB[r3.key].iron && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk, children: "\u25CF iron-rich" }),
                 DATA.FOOD_LIB[r3.key].omega3 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.blueLt, fg: COLORS.blue, children: "\u25CF omega-3" }),
@@ -58932,7 +58923,7 @@ This typically indicates that your device does not have a healthy Internet conne
         return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: bg, borderColor: fg }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700 }, children: s2.label }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.paper, fg, children: low === "out" ? "Out of stock" : low === "low" ? "Only 1 left" : `${s2.remaining} left` })
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.paper, fg, children: low === "out" ? "Out of stock" : s2.scheduledCount > 0 ? `${s2.remaining} scheduled` : low === "low" ? "Only 1 left" : `${s2.remaining} left` })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.grey, marginTop: 4 }, children: [
             "Purchased ",
@@ -59988,6 +59979,7 @@ This typically indicates that your device does not have a healthy Internet conne
           v2.iron && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk, children: "\u25CF iron-rich" }),
           v2.omega3 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.blueLt, fg: COLORS.blue, children: "\u25CF omega-3" }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey: key, entries }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TimesTriedPill, { foodKey: key, entries }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => setDogOpenKey(dogOpenKey === dogKey ? null : dogKey), style: { cursor: "pointer" }, title: "Tap for dog-safety note", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: dogStyle.bg, fg: dogStyle.fg, children: [
             dogStyle.label,
             " ",
@@ -60231,6 +60223,7 @@ This typically indicates that your device does not have a healthy Internet conne
             v2.iron && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk, children: "\u25CF iron-rich" }),
             v2.omega3 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.blueLt, fg: COLORS.blue, children: "\u25CF omega-3" }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey: key, entries }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TimesTriedPill, { foodKey: key, entries }),
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => setDogOpenIndex(dogOpenIndex === i2 ? null : i2), style: { cursor: "pointer" }, title: "Tap for dog-safety note", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: dogStyle.bg, fg: dogStyle.fg, children: [
               dogStyle.label,
               " ",
@@ -61453,6 +61446,7 @@ This typically indicates that your device does not have a healthy Internet conne
   }
   function TodayCard({ planStartDate, planOverrides, overrides, onLog, setActive, dayCustomizations, onJumpToPlan, entries, inventoryPurchases }) {
     const [showPrep, setShowPrep] = (0, import_react58.useState)(false);
+    const [dogOpenIndex, setDogOpenIndex] = (0, import_react58.useState)(null);
     const info = (0, import_react58.useMemo)(() => computeTodayInfo(planStartDate), [planStartDate]);
     if (info.status === "no-date") {
       return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { marginBottom: 20, background: COLORS.cream }, children: [
@@ -61536,9 +61530,15 @@ This typically indicates that your device does not have a healthy Internet conne
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, margin: "6px 0" }, children: [
             v2.iron && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk, children: "\u25CF iron-rich" }),
             v2.omega3 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.blueLt, fg: COLORS.blue, children: "\u25CF omega-3" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: dogStyle.bg, fg: dogStyle.fg, children: dogStyle.label }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey: key, entries })
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => setDogOpenIndex(dogOpenIndex === mi ? null : mi), style: { cursor: "pointer" }, title: "Tap for dog-safety note", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: dogStyle.bg, fg: dogStyle.fg, children: [
+              dogStyle.label,
+              " ",
+              dogOpenIndex === mi ? "\u25BE" : "\u24D8"
+            ] }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey: key, entries }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TimesTriedPill, { foodKey: key, entries })
           ] }),
+          dogOpenIndex === mi && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10.5, color: COLORS.grey, marginBottom: 6, lineHeight: 1.3 }, children: dog.note }),
           isBranded ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12.5, marginBottom: showPrep ? 4 : 8 }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "Serving:" }),
             " ",
@@ -61643,7 +61643,8 @@ This typically indicates that your device does not have a healthy Internet conne
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, margin: "6px 0" }, children: [
             v2.iron && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk, children: "\u25CF iron-rich" }),
             v2.omega3 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.blueLt, fg: COLORS.blue, children: "\u25CF omega-3" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey: key, entries })
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey: key, entries }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TimesTriedPill, { foodKey: key, entries })
           ] }),
           isBranded ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12.5, marginBottom: 4 }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: "Serving:" }),
@@ -61905,7 +61906,7 @@ This typically indicates that your device does not have a healthy Internet conne
         case "inventory":
           return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventoryPage, { inventoryPurchases, setInventoryPurchases, entries, planOverrides, planStartDate });
         case "recipecatalog":
-          return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RecipeCatalogPage, { planOverrides, setPlanOverrides, planStartDate, customMeals, overrides, setOverrides, recipeCategoryOverrides, setRecipeCategoryOverrides });
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RecipeCatalogPage, { planOverrides, setPlanOverrides, planStartDate, customMeals, overrides, setOverrides, recipeCategoryOverrides, setRecipeCategoryOverrides, entries });
         case "diningout":
           return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DiningOutPage, { entries });
         case "poop":
@@ -61932,11 +61933,6 @@ This typically indicates that your device does not have a healthy Internet conne
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BackToTopButton, {})
     ] });
   }
-
-  // src/desktop-entry.jsx
-  var import_jsx_runtime2 = __toESM(require_jsx_runtime());
-  var root = (0, import_client.createRoot)(document.getElementById("root"));
-  root.render(/* @__PURE__ */ (0, import_jsx_runtime2.jsx)(App, {}));
 })();
 /*! Bundled license information:
 
