@@ -7214,19 +7214,50 @@
     }
   });
 
+  // node_modules/react-dom/client.js
+  var require_client = __commonJS({
+    "node_modules/react-dom/client.js"(exports) {
+      "use strict";
+      var m2 = require_react_dom();
+      if (true) {
+        exports.createRoot = m2.createRoot;
+        exports.hydrateRoot = m2.hydrateRoot;
+      } else {
+        i2 = m2.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+        exports.createRoot = function(c2, o2) {
+          i2.usingClientEntryPoint = true;
+          try {
+            return m2.createRoot(c2, o2);
+          } finally {
+            i2.usingClientEntryPoint = false;
+          }
+        };
+        exports.hydrateRoot = function(c2, h, o2) {
+          i2.usingClientEntryPoint = true;
+          try {
+            return m2.hydrateRoot(c2, h, o2);
+          } finally {
+            i2.usingClientEntryPoint = false;
+          }
+        };
+      }
+      var i2;
+    }
+  });
+
   // node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
   var require_use_sync_external_store_shim_production = __commonJS({
     "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js"(exports) {
       "use strict";
-      var React45 = require_react();
+      var React46 = require_react();
       function is3(x3, y3) {
         return x3 === y3 && (0 !== x3 || 1 / x3 === 1 / y3) || x3 !== x3 && y3 !== y3;
       }
       var objectIs = "function" === typeof Object.is ? Object.is : is3;
-      var useState15 = React45.useState;
-      var useEffect21 = React45.useEffect;
-      var useLayoutEffect9 = React45.useLayoutEffect;
-      var useDebugValue2 = React45.useDebugValue;
+      var useState15 = React46.useState;
+      var useEffect21 = React46.useEffect;
+      var useLayoutEffect9 = React46.useLayoutEffect;
+      var useDebugValue2 = React46.useDebugValue;
       function useSyncExternalStore$2(subscribe, getSnapshot) {
         var value = getSnapshot(), _useState = useState15({ inst: { value, getSnapshot } }), inst = _useState[0].inst, forceUpdate = _useState[1];
         useLayoutEffect9(
@@ -7263,7 +7294,7 @@
         return getSnapshot();
       }
       var shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
-      exports.useSyncExternalStore = void 0 !== React45.useSyncExternalStore ? React45.useSyncExternalStore : shim;
+      exports.useSyncExternalStore = void 0 !== React46.useSyncExternalStore ? React46.useSyncExternalStore : shim;
     }
   });
 
@@ -7283,17 +7314,17 @@
   var require_with_selector_production = __commonJS({
     "node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js"(exports) {
       "use strict";
-      var React45 = require_react();
+      var React46 = require_react();
       var shim = require_shim();
       function is3(x3, y3) {
         return x3 === y3 && (0 !== x3 || 1 / x3 === 1 / y3) || x3 !== x3 && y3 !== y3;
       }
       var objectIs = "function" === typeof Object.is ? Object.is : is3;
       var useSyncExternalStore2 = shim.useSyncExternalStore;
-      var useRef22 = React45.useRef;
-      var useEffect21 = React45.useEffect;
-      var useMemo13 = React45.useMemo;
-      var useDebugValue2 = React45.useDebugValue;
+      var useRef22 = React46.useRef;
+      var useEffect21 = React46.useEffect;
+      var useMemo13 = React46.useMemo;
+      var useDebugValue2 = React46.useDebugValue;
       exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual2) {
         var instRef = useRef22(null);
         if (null === instRef.current) {
@@ -7364,16 +7395,16 @@
   var require_use_sync_external_store_with_selector_production = __commonJS({
     "node_modules/use-sync-external-store/cjs/use-sync-external-store-with-selector.production.js"(exports) {
       "use strict";
-      var React45 = require_react();
+      var React46 = require_react();
       function is3(x3, y3) {
         return x3 === y3 && (0 !== x3 || 1 / x3 === 1 / y3) || x3 !== x3 && y3 !== y3;
       }
       var objectIs = "function" === typeof Object.is ? Object.is : is3;
-      var useSyncExternalStore2 = React45.useSyncExternalStore;
-      var useRef22 = React45.useRef;
-      var useEffect21 = React45.useEffect;
-      var useMemo13 = React45.useMemo;
-      var useDebugValue2 = React45.useDebugValue;
+      var useSyncExternalStore2 = React46.useSyncExternalStore;
+      var useRef22 = React46.useRef;
+      var useEffect21 = React46.useEffect;
+      var useMemo13 = React46.useMemo;
+      var useDebugValue2 = React46.useDebugValue;
       exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual2) {
         var instRef = useRef22(null);
         if (null === instRef.current) {
@@ -8740,6 +8771,10 @@
       }
     }
   });
+
+  // src/desktop-entry.jsx
+  var import_react59 = __toESM(require_react());
+  var import_client = __toESM(require_client());
 
   // src/DesktopApp.jsx
   var import_react58 = __toESM(require_react());
@@ -61933,6 +61968,11 @@ This typically indicates that your device does not have a healthy Internet conne
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BackToTopButton, {})
     ] });
   }
+
+  // src/desktop-entry.jsx
+  var import_jsx_runtime2 = __toESM(require_jsx_runtime());
+  var root = (0, import_client.createRoot)(document.getElementById("root"));
+  root.render(/* @__PURE__ */ (0, import_jsx_runtime2.jsx)(App, {}));
 })();
 /*! Bundled license information:
 
