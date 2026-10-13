@@ -58900,9 +58900,75 @@ This typically indicates that your device does not have a healthy Internet conne
       })
     ] });
   }
-  function InventoryPage({ inventoryPurchases, setInventoryPurchases, entries, planOverrides, planStartDate }) {
+  function InventorySchedulePicker({ foodKey, planOverrides, setPlanOverrides, planStartDate, entries, onClose }) {
+    const [confirmMsg, setConfirmMsg] = (0, import_react58.useState)(null);
+    const SLOT_NAMES = { days: "Meal", breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner" };
+    const shortLabel = (k2) => (DATA.FOOD_LIB[k2]?.label || k2).replace(/ \((Square Baby|Little Spoon|Serenity Kids|Tiny Organics|Nurture Life)\)$/, "");
+    const days = [];
+    if (planStartDate) {
+      const first = computePlanInfoForOffset(planStartDate, 0);
+      const startOff = first.status === "not-started" ? first.startsIn : 0;
+      for (let off = startOff; off < startOff + 7; off++) {
+        const info = computePlanInfoForOffset(planStartDate, off);
+        if (info.status !== "active") continue;
+        days.push({ ...info, date: addDays(todayStr(), off) });
+      }
+    }
+    const schedule = (d, slot) => {
+      const list = [...getEffectiveList(planOverrides, d.week, slot)];
+      list[d.dayIndex] = foodKey;
+      setEffectiveList(setPlanOverrides, d.week, slot, list);
+      const wd = (/* @__PURE__ */ new Date(d.date + "T00:00:00")).toLocaleDateString(void 0, { weekday: "long" });
+      setConfirmMsg(`\u2705 Scheduled for ${wd}${slot === "days" ? "" : " " + SLOT_NAMES[slot].toLowerCase()}`);
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginTop: 10, background: COLORS.paper, border: `1px solid ${COLORS.line}`, borderRadius: 10, padding: 10 }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700, fontSize: 13 }, children: "Pick a meal to swap out" }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "ghost", onClick: onClose, children: "Close" })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey, entries }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TimesTriedPill, { foodKey, entries })
+      ] }),
+      confirmMsg && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12.5, fontWeight: 700, color: COLORS.sageDk, marginBottom: 8 }, children: confirmMsg }),
+      !planStartDate && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12.5, color: COLORS.grey }, children: "Set your solids start date on the Plan page first, then you can schedule from here." }),
+      planStartDate && days.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12.5, color: COLORS.grey }, children: "No upcoming plan days to schedule." }),
+      days.map((d) => {
+        const plan = DATA.DAILY_PLANS[String(d.week)];
+        const label = (/* @__PURE__ */ new Date(d.date + "T00:00:00")).toLocaleDateString(void 0, { weekday: "short", month: "short", day: "numeric" });
+        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "6px 0", borderTop: `1px solid ${COLORS.line}` }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700, fontSize: 12.5, marginBottom: 4 }, children: label }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 }, children: getPlanSlots(plan).map((slot) => {
+            const curKey = getEffectiveList(planOverrides, d.week, slot)[d.dayIndex];
+            const logged = isPlannedFoodLoggedOnDate(curKey, d.date, entries);
+            const same = curKey === foodKey;
+            const disabled = logged || same;
+            return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+              "button",
+              {
+                disabled,
+                onClick: () => schedule(d, slot),
+                style: { textAlign: "left", padding: "6px 10px", borderRadius: 8, border: `1px solid ${COLORS.line}`, background: disabled ? COLORS.cream : COLORS.sageLt, color: COLORS.charcoal, fontFamily: "inherit", fontSize: 12, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.6 : 1 },
+                children: [
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontWeight: 700 }, children: [
+                    SLOT_NAMES[slot],
+                    logged ? " \u2705 logged" : same ? " \u2713 already this" : ""
+                  ] }),
+                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: COLORS.grey }, children: shortLabel(curKey) })
+                ]
+              },
+              slot
+            );
+          }) })
+        ] }, d.date);
+      })
+    ] });
+  }
+  function InventoryPage({ inventoryPurchases, setInventoryPurchases, entries, planOverrides, setPlanOverrides, planStartDate }) {
     const [selectedBrand, setSelectedBrand] = (0, import_react58.useState)("");
     const [bulkQtys, setBulkQtys] = (0, import_react58.useState)({});
+    const [schedulingKey, setSchedulingKey] = (0, import_react58.useState)(null);
+    const [showOut, setShowOut] = (0, import_react58.useState)(false);
     const brandGroups = (0, import_react58.useMemo)(() => {
       const groups = {};
       Object.keys(BRANDED_PRODUCT_COMPONENTS).forEach((k2) => {
@@ -58915,6 +58981,9 @@ This typically indicates that your device does not have a healthy Internet conne
     const brandProducts = selectedBrand ? brandGroups[selectedBrand] || [] : [];
     const cleanLabel = (key) => (DATA.FOOD_LIB[key]?.label || "").replace(` (${selectedBrand})`, "");
     const statuses = (0, import_react58.useMemo)(() => computeAllInventoryStatuses(inventoryPurchases, entries, planOverrides, planStartDate), [inventoryPurchases, entries, planOverrides, planStartDate]);
+    const inStock = statuses.filter((s2) => s2.remaining > 0);
+    const outOfStock = statuses.filter((s2) => s2.remaining <= 0);
+    const visibleStatuses = showOut ? statuses : inStock;
     const adjustQty = (key, delta) => {
       setBulkQtys((prev) => {
         const next = { ...prev };
@@ -58973,14 +59042,18 @@ This typically indicates that your device does not have a healthy Internet conne
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, fontSize: 15, margin: "18px 0 8px" }, children: "\u{1F4E6} Current Inventory" }),
       statuses.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Callout, { label: "Nothing purchased yet", children: "Add a purchase above to start tracking." }),
-      statuses.map((s2) => {
+      statuses.length > 0 && inStock.length === 0 && !showOut && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Callout, { label: "All out of stock", children: "Everything you've purchased has been used up. Add a new purchase above, or show out-of-stock items below." }),
+      visibleStatuses.map((s2) => {
         const low = s2.remaining <= 0 ? "out" : s2.remaining <= 1 ? "low" : "ok";
         const bg = low === "out" ? COLORS.redLt : low === "low" ? COLORS.goldLt : COLORS.sageLt;
         const fg = low === "out" ? COLORS.red : low === "low" ? "#8a6a1e" : COLORS.sageDk;
         return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: bg, borderColor: fg }, children: [
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700 }, children: s2.label }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.paper, fg, children: low === "out" ? "Out of stock" : s2.scheduledCount > 0 ? `${s2.remaining} scheduled` : low === "low" ? "Only 1 left" : `${s2.remaining} left` })
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "inline-flex", flexWrap: "wrap", gap: 5, justifyContent: "flex-end" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey: s2.key, entries }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.paper, fg, children: low === "out" ? "Out of stock" : s2.scheduledCount > 0 ? `${s2.remaining} scheduled` : low === "low" ? "Only 1 left" : `${s2.remaining} left` })
+            ] })
           ] }),
           /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.grey, marginTop: 4 }, children: [
             "Purchased ",
@@ -58995,9 +59068,12 @@ This typically indicates that your device does not have a healthy Internet conne
             p2.qty,
             " ",
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => removePurchase(s2.key, p2.id), style: { cursor: "pointer", marginLeft: 4 }, children: "\u2715" })
-          ] }, p2.id)) })
+          ] }, p2.id)) }),
+          low !== "out" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "sage", onClick: () => setSchedulingKey(schedulingKey === s2.key ? null : s2.key), children: schedulingKey === s2.key ? "Hide schedule" : "\u{1F4C5} Add to schedule" }) }),
+          schedulingKey === s2.key && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventorySchedulePicker, { foodKey: s2.key, planOverrides, setPlanOverrides, planStartDate, entries, onClose: () => setSchedulingKey(null) })
         ] }, s2.key);
-      })
+      }),
+      outOfStock.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 10 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "ghost", onClick: () => setShowOut(!showOut), children: showOut ? "Hide out of stock" : `Show out of stock (${outOfStock.length})` }) })
     ] });
   }
   function CreateMealPage({ customMeals, setCustomMeals, onLog, overrides }) {
@@ -61961,7 +62037,7 @@ This typically indicates that your device does not have a healthy Internet conne
         case "createmeal":
           return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CreateMealPage, { customMeals, setCustomMeals, onLog: openLogModal, overrides });
         case "inventory":
-          return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventoryPage, { inventoryPurchases, setInventoryPurchases, entries, planOverrides, planStartDate });
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventoryPage, { inventoryPurchases, setInventoryPurchases, entries, planOverrides, setPlanOverrides, planStartDate });
         case "recipecatalog":
           return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RecipeCatalogPage, { planOverrides, setPlanOverrides, planStartDate, customMeals, overrides, setOverrides, recipeCategoryOverrides, setRecipeCategoryOverrides, entries });
         case "diningout":
