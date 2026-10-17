@@ -58965,15 +58965,72 @@ This typically indicates that your device does not have a healthy Internet conne
       })
     ] });
   }
+  function brandOfKey(k2) {
+    return k2.startsWith("sqb_") ? "Square Baby" : k2.startsWith("ls_") ? "Little Spoon" : k2.startsWith("sk_") ? "Serenity Kids" : k2.startsWith("ti_") ? "Tiny Organics" : k2.startsWith("nl_") ? "Nurture Life" : "Other";
+  }
+  var DEFROST_BRANDS = ["Square Baby", "Little Spoon", "Tiny Organics", "Nurture Life"];
+  function computeDefrostReminders(planOverrides, planStartDate) {
+    const rows = [];
+    for (let d = 0; d <= 7; d++) {
+      const mealInfo = computePlanInfoForOffset(planStartDate, d + 1);
+      const items = [];
+      if (mealInfo.status === "active") {
+        const plan = DATA.DAILY_PLANS[String(mealInfo.week)];
+        getPlanSlots(plan).forEach((slot) => {
+          const key = getEffectiveList(planOverrides, mealInfo.week, slot)[mealInfo.dayIndex];
+          if (!key || !BRANDED_PRODUCT_COMPONENTS[key] || !DEFROST_BRANDS.includes(brandOfKey(key))) return;
+          const mealLabel = slot === "breakfast" ? "breakfast" : slot === "dinner" ? "dinner" : "meal";
+          items.push({ key, label: DATA.FOOD_LIB[key]?.label || key, mealLabel });
+        });
+      }
+      const dayName = (/* @__PURE__ */ new Date(addDays(todayStr(), d) + "T00:00:00")).toLocaleDateString("en-US", { weekday: "long" });
+      const mealDayName = (/* @__PURE__ */ new Date(addDays(todayStr(), d + 1) + "T00:00:00")).toLocaleDateString("en-US", { weekday: "long" });
+      if (d === 0 && items.length === 0) continue;
+      rows.push({ offset: d, dayName: d === 0 ? "Today" : d === 1 ? "Tomorrow (" + dayName + ")" : dayName, mealDayName, items });
+    }
+    return rows;
+  }
+  function DefrostReminders({ planOverrides, planStartDate }) {
+    const [open, setOpen] = (0, import_react58.useState)(false);
+    const rows = (0, import_react58.useMemo)(() => computeDefrostReminders(planOverrides, planStartDate), [planOverrides, planStartDate]);
+    const total = rows.reduce((s2, r3) => s2 + r3.items.length, 0);
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { onClick: () => setOpen(!open), style: { display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontWeight: 800 }, children: [
+          "\u{1F9CA} Defrost reminders",
+          total > 0 ? ` (${total})` : ""
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12, color: COLORS.grey }, children: open ? "Hide \u25B2" : "Show \u25BC" })
+      ] }),
+      open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginTop: 8 }, children: [
+        !planStartDate && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12.5, color: COLORS.grey }, children: "Set a plan start date to see defrost reminders." }),
+        planStartDate && rows.map((r3) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "7px 0", borderBottom: `1px solid ${COLORS.line}` }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, fontWeight: 800, color: COLORS.sageDk }, children: r3.dayName }),
+          r3.items.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12.5, color: COLORS.grey }, children: "Nothing to defrost" }) : r3.items.map((it2, i2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 13.5 }, children: [
+            it2.label,
+            " ",
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: COLORS.grey, fontSize: 12 }, children: [
+              "\xB7 for ",
+              r3.mealDayName,
+              " ",
+              it2.mealLabel
+            ] })
+          ] }, i2))
+        ] }, r3.offset)),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, color: COLORS.grey, marginTop: 6 }, children: "Covers Square Baby, Little Spoon, Tiny Organics and Nurture Life meals in the plan. Move them to the fridge the day before." })
+      ] })
+    ] });
+  }
   function InventoryPage({ inventoryPurchases, setInventoryPurchases, entries, planOverrides, setPlanOverrides, planStartDate }) {
     const [selectedBrand, setSelectedBrand] = (0, import_react58.useState)("");
     const [bulkQtys, setBulkQtys] = (0, import_react58.useState)({});
     const [schedulingKey, setSchedulingKey] = (0, import_react58.useState)(null);
     const [showOut, setShowOut] = (0, import_react58.useState)(false);
+    const [brandFilter, setBrandFilter] = (0, import_react58.useState)("All");
     const brandGroups = (0, import_react58.useMemo)(() => {
       const groups = {};
       Object.keys(BRANDED_PRODUCT_COMPONENTS).forEach((k2) => {
-        const brand = k2.startsWith("sqb_") ? "Square Baby" : k2.startsWith("ls_") ? "Little Spoon" : k2.startsWith("sk_") ? "Serenity Kids" : k2.startsWith("ti_") ? "Tiny Organics" : k2.startsWith("nl_") ? "Nurture Life" : "Other";
+        const brand = brandOfKey(k2);
         (groups[brand] = groups[brand] || []).push(k2);
       });
       Object.values(groups).forEach((list) => list.sort((a, b2) => DATA.FOOD_LIB[a].label.localeCompare(DATA.FOOD_LIB[b2].label)));
@@ -58984,7 +59041,11 @@ This typically indicates that your device does not have a healthy Internet conne
     const statuses = (0, import_react58.useMemo)(() => computeAllInventoryStatuses(inventoryPurchases, entries, planOverrides, planStartDate), [inventoryPurchases, entries, planOverrides, planStartDate]);
     const inStock = statuses.filter((s2) => s2.remaining > 0);
     const outOfStock = statuses.filter((s2) => s2.remaining <= 0);
-    const visibleStatuses = showOut ? statuses : inStock;
+    const stockFiltered = showOut ? statuses : inStock;
+    const invBrands = Array.from(new Set(stockFiltered.map((s2) => brandOfKey(s2.key)))).sort();
+    const activeBrandFilter = invBrands.includes(brandFilter) ? brandFilter : "All";
+    const visibleStatuses = activeBrandFilter === "All" ? stockFiltered : stockFiltered.filter((s2) => brandOfKey(s2.key) === activeBrandFilter);
+    const visibleBrands = Array.from(new Set(visibleStatuses.map((s2) => brandOfKey(s2.key)))).sort();
     const adjustQty = (key, delta) => {
       setBulkQtys((prev) => {
         const next = { ...prev };
@@ -59009,7 +59070,8 @@ This typically indicates that your device does not have a healthy Internet conne
       });
       setBulkQtys({});
     };
-    const removePurchase = (key, id) => {
+    const removePurchase = (key, id, qty) => {
+      if (!window.confirm(`Remove this purchase of ${qty} from Inventory? This changes how many are left.`)) return;
       setInventoryPurchases((prev) => {
         const next = { ...prev };
         next[key] = (next[key] || []).filter((p2) => p2.id !== id);
@@ -59041,39 +59103,44 @@ This typically indicates that your device does not have a healthy Internet conne
           /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 12 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { onClick: commitBulkAdd, style: { fontSize: 13, padding: "8px 16px" }, tone: totalToAdd > 0 ? "sage" : "ghost", children: totalToAdd > 0 ? `Add ${totalToAdd} to Inventory` : "Add to Inventory" }) })
         ] })
       ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DefrostReminders, { planOverrides, planStartDate }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, fontSize: 15, margin: "18px 0 8px" }, children: "\u{1F4E6} Current Inventory" }),
       statuses.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Callout, { label: "Nothing purchased yet", children: "Add a purchase above to start tracking." }),
       statuses.length > 0 && inStock.length === 0 && !showOut && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Callout, { label: "All out of stock", children: "Everything you've purchased has been used up. Add a new purchase above, or show out-of-stock items below." }),
-      visibleStatuses.map((s2) => {
-        const low = s2.remaining <= 0 ? "out" : s2.remaining <= 1 ? "low" : "ok";
-        const bg = low === "out" ? COLORS.redLt : low === "low" ? COLORS.goldLt : COLORS.sageLt;
-        const fg = low === "out" ? COLORS.red : low === "low" ? "#8a6a1e" : COLORS.sageDk;
-        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: bg, borderColor: fg }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700 }, children: s2.label }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "inline-flex", flexWrap: "wrap", gap: 5, justifyContent: "flex-end" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey: s2.key, entries }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.paper, fg, children: low === "out" ? "Out of stock" : s2.scheduledCount > 0 ? `${s2.remaining} scheduled` : low === "low" ? "Only 1 left" : `${s2.remaining} left` })
-            ] })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.grey, marginTop: 4 }, children: [
-            "Purchased ",
-            s2.purchased,
-            " \xB7 Used ",
-            s2.consumed,
-            " \xB7 ",
-            s2.scheduledCount > 0 ? `Scheduled ${s2.scheduledCount} more time${s2.scheduledCount === 1 ? "" : "s"} in the plan` : "Not currently scheduled"
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }, children: (inventoryPurchases[s2.key] || []).map((p2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: COLORS.paper, fg: COLORS.grey, children: [
-            "+",
-            p2.qty,
-            " ",
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => removePurchase(s2.key, p2.id), style: { cursor: "pointer", marginLeft: 4 }, children: "\u2715" })
-          ] }, p2.id)) }),
-          low !== "out" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "sage", onClick: () => setSchedulingKey(schedulingKey === s2.key ? null : s2.key), children: schedulingKey === s2.key ? "Hide schedule" : "\u{1F4C5} Add to schedule" }) }),
-          schedulingKey === s2.key && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventorySchedulePicker, { foodKey: s2.key, planOverrides, setPlanOverrides, planStartDate, entries, onClose: () => setSchedulingKey(null) })
-        ] }, s2.key);
-      }),
+      invBrands.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }, children: ["All", ...invBrands].map((b2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => setBrandFilter(b2), style: { cursor: "pointer", padding: "5px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 700, border: `1px solid ${COLORS.sageDk}`, background: activeBrandFilter === b2 ? COLORS.sageDk : COLORS.paper, color: activeBrandFilter === b2 ? COLORS.paper : COLORS.sageDk }, children: b2 }, b2)) }),
+      visibleBrands.map((brand) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", color: COLORS.grey, margin: "12px 0 6px" }, children: brand }),
+        visibleStatuses.filter((s2) => brandOfKey(s2.key) === brand).map((s2) => {
+          const low = s2.remaining <= 0 ? "out" : s2.remaining <= 1 ? "low" : "ok";
+          const bg = low === "out" ? COLORS.redLt : low === "low" ? COLORS.goldLt : COLORS.sageLt;
+          const fg = low === "out" ? COLORS.red : low === "low" ? "#8a6a1e" : COLORS.sageDk;
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { style: { background: bg, borderColor: fg }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 700 }, children: s2.label }),
+              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "inline-flex", flexWrap: "wrap", gap: 5, justifyContent: "flex-end" }, children: [
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AllergenExposurePill, { foodKey: s2.key, entries }),
+                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.paper, fg, children: low === "out" ? "Out of stock" : s2.scheduledCount > 0 ? `${s2.remaining} scheduled` : low === "low" ? "Only 1 left" : `${s2.remaining} left` })
+              ] })
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.grey, marginTop: 4 }, children: [
+              "Purchased ",
+              s2.purchased,
+              " \xB7 Used ",
+              s2.consumed,
+              " \xB7 ",
+              s2.scheduledCount > 0 ? `Scheduled ${s2.scheduledCount} more time${s2.scheduledCount === 1 ? "" : "s"} in the plan` : "Not currently scheduled"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }, children: (inventoryPurchases[s2.key] || []).map((p2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: COLORS.paper, fg: COLORS.grey, children: [
+              "+",
+              p2.qty,
+              " ",
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { onClick: () => removePurchase(s2.key, p2.id, p2.qty), style: { cursor: "pointer", marginLeft: 4 }, children: "\u2715" })
+            ] }, p2.id)) }),
+            low !== "out" && s2.scheduledCount === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "sage", onClick: () => setSchedulingKey(schedulingKey === s2.key ? null : s2.key), children: schedulingKey === s2.key ? "Hide schedule" : "\u{1F4C5} Add to schedule" }) }),
+            schedulingKey === s2.key && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventorySchedulePicker, { foodKey: s2.key, planOverrides, setPlanOverrides, planStartDate, entries, onClose: () => setSchedulingKey(null) })
+          ] }, s2.key);
+        })
+      ] }, brand)),
       outOfStock.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 10 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "ghost", onClick: () => setShowOut(!showOut), children: showOut ? "Hide out of stock" : `Show out of stock (${outOfStock.length})` }) })
     ] });
   }
