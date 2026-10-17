@@ -58084,7 +58084,74 @@ This typically indicates that your device does not have a healthy Internet conne
       ] })
     ] });
   }
-  function InventoryPage({ inventoryPurchases, setInventoryPurchases, entries, planOverrides, setPlanOverrides, planStartDate }) {
+  var DEFROST_SHELF_DAYS = { "Square Baby": 28, "Little Spoon": 7, "Tiny Organics": 3, "Nurture Life": 1 };
+  var DEFROST_SHELF_NOTE = "Square Baby 4 weeks sealed \xB7 Little Spoon 7 days \xB7 Tiny Organics 3 days \xB7 Nurture Life 24 hours";
+  function computeDiscardReminders(planOverrides, planStartDate, entries, dismissed) {
+    if (!planStartDate) return [];
+    const today = todayStr();
+    const rows = [];
+    for (let m2 = 1; m2 <= 30; m2++) {
+      const info = computePlanInfoForOffset(planStartDate, -m2);
+      if (info.status !== "active") continue;
+      const mealDate = addDays(today, -m2);
+      const defrostDate = addDays(mealDate, -1);
+      const plan = DATA.DAILY_PLANS[String(info.week)];
+      getPlanSlots(plan).forEach((slot) => {
+        const key = getEffectiveList(planOverrides, info.week, slot)[info.dayIndex];
+        if (!key || !BRANDED_PRODUCT_COMPONENTS[key]) return;
+        const brand = brandOfKey(key);
+        if (!DEFROST_SHELF_DAYS[brand]) return;
+        const dismissKey = key + "|" + mealDate;
+        if (dismissed && dismissed[dismissKey]) return;
+        const logged = (entries || []).some((e3) => e3.date >= defrostDate && (e3.brandedProductKey === key || inferBrandedKeyForEntry(e3) === key));
+        if (logged) return;
+        const discardBy = addDays(defrostDate, DEFROST_SHELF_DAYS[brand]);
+        if (discardBy < addDays(today, -14)) return;
+        rows.push({ dismissKey, key, label: DATA.FOOD_LIB[key]?.label || key, defrostDate, mealDate, discardBy, expired: discardBy < today || DEFROST_SHELF_DAYS[brand] <= 1 && discardBy <= today });
+      });
+    }
+    return rows.sort((a, b2) => a.discardBy.localeCompare(b2.discardBy));
+  }
+  function DiscardReminders({ planOverrides, planStartDate, entries, dismissed, setDismissed }) {
+    const [open, setOpen] = (0, import_react53.useState)(false);
+    const rows = (0, import_react53.useMemo)(() => computeDiscardReminders(planOverrides, planStartDate, entries, dismissed), [planOverrides, planStartDate, entries, dismissed]);
+    const dayLabel = (d) => (/* @__PURE__ */ new Date(d + "T00:00:00")).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    const expiredCount = rows.filter((r3) => r3.expired).length;
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { onClick: () => setOpen(!open), style: { display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontWeight: 800 }, children: [
+          "\u{1F5D1}\uFE0F Discard reminders",
+          rows.length > 0 ? ` (${rows.length})` : "",
+          expiredCount > 0 ? " \u2014 " + expiredCount + " to toss" : ""
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12, color: COLORS.grey }, children: open ? "Hide \u25B2" : "Show \u25BC" })
+      ] }),
+      open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginTop: 8 }, children: [
+        !planStartDate && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12.5, color: COLORS.grey }, children: "Set a plan start date to see discard reminders." }),
+        planStartDate && rows.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12.5, color: COLORS.grey }, children: "Nothing to discard \u2014 every scheduled branded meal has been logged." }),
+        rows.map((r3) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "7px 0", borderBottom: `1px solid ${COLORS.line}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 13.5 }, children: r3.label }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 12, color: COLORS.grey }, children: [
+              "Defrosted ",
+              dayLabel(r3.defrostDate),
+              " for ",
+              dayLabel(r3.mealDate),
+              " \xB7 not logged"
+            ] }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginTop: 3 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: r3.expired ? COLORS.redLt : COLORS.goldLt, fg: r3.expired ? COLORS.red : "#8a6a1e", children: r3.expired ? "Discard now" : "Use or discard by " + dayLabel(r3.discardBy) }) })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: "ghost", onClick: () => setDismissed((prev) => ({ ...prev || {}, [r3.dismissKey]: true })), children: "\u2713 Done" })
+        ] }, r3.dismissKey)),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 11, color: COLORS.grey, marginTop: 6 }, children: [
+          "Assumes each meal was defrosted the day before it was scheduled. Tap \u2713 Done once it's eaten or tossed. Fridge windows after thawing: ",
+          DEFROST_SHELF_NOTE,
+          ". Check the package too."
+        ] })
+      ] })
+    ] });
+  }
+  function InventoryPage({ inventoryPurchases, setInventoryPurchases, entries, planOverrides, setPlanOverrides, planStartDate, discardDismissed, setDiscardDismissed }) {
     const [selectedBrand, setSelectedBrand] = (0, import_react53.useState)("");
     const [bulkQtys, setBulkQtys] = (0, import_react53.useState)({});
     const [schedulingKey, setSchedulingKey] = (0, import_react53.useState)(null);
@@ -58167,6 +58234,7 @@ This typically indicates that your device does not have a healthy Internet conne
         ] })
       ] }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DefrostReminders, { planOverrides, planStartDate }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DiscardReminders, { planOverrides, planStartDate, entries, dismissed: discardDismissed, setDismissed: setDiscardDismissed }),
       /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, fontSize: 15, margin: "18px 0 8px" }, children: "\u{1F4E6} Current Inventory" }),
       statuses.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Callout, { label: "Nothing purchased yet", children: "Add a purchase above to start tracking." }),
       statuses.length > 0 && inStock.length === 0 && !showOut && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Callout, { label: "All out of stock", children: "Everything you've purchased has been used up. Add a new purchase above, or show out-of-stock items below." }),
@@ -60778,6 +60846,7 @@ This typically indicates that your device does not have a healthy Internet conne
       syncCustomMealsIntoCatalog(customMeals);
     }, [customMeals]);
     const [inventoryPurchases, setInventoryPurchases] = usePersistentState("inventoryPurchases", {}, markSaved, setStorageBackend);
+    const [discardDismissed, setDiscardDismissed] = usePersistentState("discardDismissed", {}, markSaved, setStorageBackend);
     const [recipeCategoryOverrides, setRecipeCategoryOverrides] = usePersistentState("recipeCategoryOverrides", {}, markSaved, setStorageBackend);
     const hasSaveError = overridesSaveError || entriesSaveError;
     const [cloudStatus, setCloudStatus] = (0, import_react53.useState)("connecting");
@@ -60900,7 +60969,7 @@ This typically indicates that your device does not have a healthy Internet conne
         case "createmeal":
           return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CreateMealPage, { customMeals, setCustomMeals, onLog: openLogSheet, overrides });
         case "inventory":
-          return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventoryPage, { inventoryPurchases, setInventoryPurchases, entries, planOverrides, setPlanOverrides, planStartDate });
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InventoryPage, { inventoryPurchases, setInventoryPurchases, entries, planOverrides, setPlanOverrides, planStartDate, discardDismissed, setDiscardDismissed });
         case "recipecatalog":
           return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RecipeCatalogPage, { planOverrides, setPlanOverrides, planStartDate, customMeals, overrides, setOverrides, recipeCategoryOverrides, setRecipeCategoryOverrides, entries });
         case "diningout":
