@@ -56856,6 +56856,46 @@ This typically indicates that your device does not have a healthy Internet conne
     const n2 = normalize2(label);
     return entries.filter((e3) => e3.foods.some((f) => normalize2(f) === n2) || key && inferBrandedKeyForEntry(e3) === key).map((e3) => ({ date: e3.date, response: e3.response, prep: e3.prep, notes: e3.notes, concerning: e3.concerning })).sort((a, b2) => a.date < b2.date ? -1 : a.date > b2.date ? 1 : 0);
   }
+  function computeTriedWithMixIns(food, entries, planOverrides, dayCustomizations, planStartDate) {
+    const base = computeFoodTriedDates(food, entries);
+    const key = food && typeof food === "object" ? food.key : null;
+    const label = food && typeof food === "object" ? food.label : food;
+    if (!key || !label) return base;
+    const target = normalize2(label);
+    const seen = new Set(entries.filter((e3) => (e3.foods || []).some((f) => normalize2(f) === target) || inferBrandedKeyForEntry(e3) === key));
+    const extra = [];
+    const mark = (e3) => {
+      if (seen.has(e3)) return;
+      seen.add(e3);
+      extra.push({ date: e3.date, response: e3.response, prep: e3.prep, notes: e3.notes, concerning: e3.concerning, via: "mix-in" });
+    };
+    const lower = String(label).toLowerCase();
+    entries.forEach((e3) => {
+      const n2 = String(e3.notes || "").toLowerCase();
+      if (n2.includes("blended with " + lower) || n2.includes("combine with " + lower) || n2.includes("mixed with " + lower)) mark(e3);
+    });
+    if (planStartDate) {
+      const today = todayStr();
+      const keys = new Set([key, ...getContainingMultiFoodKeys(key)]);
+      for (let week = 1; week <= TOTAL_PLAN_WEEKS; week++) {
+        const plan = DATA.DAILY_PLANS[String(week)];
+        getPlanSlots(plan).forEach((slot) => {
+          getEffectiveList(planOverrides, week, slot).forEach((baseKey, dayIndex) => {
+            const custom = getDayCustomization(dayCustomizations, week, slot, dayIndex);
+            if (!custom.mixInKey || !keys.has(custom.mixInKey)) return;
+            const date = addDays(planStartDate, (week - 1) * 7 + dayIndex);
+            if (date > today) return;
+            const baseLabels = decomposeToLabels(baseKey);
+            entries.forEach((e3) => {
+              if (e3.date !== date) return;
+              if (e3.brandedProductKey === baseKey || inferBrandedKeyForEntry(e3) === baseKey || baseLabels.some((l2) => (e3.foods || []).includes(l2))) mark(e3);
+            });
+          });
+        });
+      }
+    }
+    return base.concat(extra).sort((a, b2) => a.date < b2.date ? -1 : a.date > b2.date ? 1 : 0);
+  }
   function findFoodsContaining(foodKey, customMeals) {
     const results = [];
     Object.entries(COMBO_COMPONENTS).forEach(([key, comps]) => {
@@ -58411,9 +58451,10 @@ This typically indicates that your device does not have a healthy Internet conne
   function FoodSearch({ entries, planOverrides, dayCustomizations, planStartDate, customMeals }) {
     const [query, setQuery] = (0, import_react53.useState)("");
     const [selected, setSelected] = (0, import_react53.useState)(null);
+    const [openSec, setOpenSec] = (0, import_react53.useState)({ tried: true, sched: false, cat: false });
     const matches3 = (0, import_react53.useMemo)(() => query.trim() ? foodSearchMatches(query) : [], [query]);
     const schedule = (0, import_react53.useMemo)(() => selected ? computeFoodSchedule(selected.key, planOverrides, dayCustomizations) : [], [selected, planOverrides, dayCustomizations]);
-    const tried = (0, import_react53.useMemo)(() => selected ? computeFoodTriedDates(selected, entries) : [], [selected, entries]);
+    const tried = (0, import_react53.useMemo)(() => selected ? computeTriedWithMixIns(selected, entries, planOverrides, dayCustomizations, planStartDate) : [], [selected, entries, planOverrides, dayCustomizations, planStartDate]);
     const containingFoods = (0, import_react53.useMemo)(() => selected ? findFoodsContaining(selected.key, customMeals) : [], [selected, customMeals]);
     const visibleSchedule = (0, import_react53.useMemo)(() => {
       if (!planStartDate) return schedule;
@@ -58462,65 +58503,41 @@ This typically indicates that your device does not have a healthy Internet conne
           (/* @__PURE__ */ new Date(nextUp.date + "T00:00:00")).toLocaleDateString(void 0, { month: "long", day: "numeric" }),
           nextUp.role ? ` as a ${nextUp.role}` : ""
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontWeight: 800, marginBottom: 8 }, children: [
-            "\u{1F4C5} Scheduled ",
-            visibleSchedule.length > 0 && `(${visibleSchedule.length})`
-          ] }),
-          visibleSchedule.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: COLORS.grey, fontSize: 13, fontStyle: "italic" }, children: schedule.length > 0 ? "No upcoming occurrences \u2014 it was scheduled earlier in the plan." : `Not scheduled anywhere in the ${TOTAL_PLAN_WEEKS}-week plan.` }),
-          visibleSchedule.map((o2, i2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "7px 0", borderBottom: `1px solid ${COLORS.line}`, fontSize: 13 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("b", { children: [
-              "Week ",
-              o2.week
-            ] }),
-            ", ",
-            o2.dayName,
-            o2.mealLabel ? ` \u2014 ${o2.mealLabel}` : "",
-            o2.role && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Pill, { bg: COLORS.goldLt, fg: "#8a6a1e", children: [
-              " ",
-              o2.role
-            ] })
-          ] }, i2))
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontWeight: 800, marginBottom: 8 }, children: "\u{1F37D}\uFE0F Foods with This Ingredient" }),
-          containingFoods.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { color: COLORS.grey, fontSize: 13, fontStyle: "italic" }, children: [
-            "Nothing in your combos, branded products, or custom meals contains ",
-            selected.label,
-            " yet."
-          ] }),
-          containingFoods.map((p2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "7px 0", borderBottom: `1px solid ${COLORS.line}`, fontSize: 13 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: p2.label }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk, children: p2.source === "branded" ? "brand" : p2.source === "custom" ? "your recipe" : "combo" })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 11, color: COLORS.grey, marginTop: 2 }, children: [
-              "Ingredients: ",
-              p2.ingredients.join(", ")
-            ] })
-          ] }, p2.key)),
-          containingFoods.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 10.5, color: COLORS.grey, marginTop: 6, fontStyle: "italic" }, children: [
-            "Use Swap on the Plan page to put one of these in for ",
-            selected.label,
-            "."
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontWeight: 800, marginBottom: 8 }, children: [
-            "\u2705 Tried ",
-            tried.length > 0 && `(${tried.length})`
-          ] }),
-          tried.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: COLORS.grey, fontSize: 13, fontStyle: "italic" }, children: "Not logged yet." }),
-          tried.map((t2, i2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "7px 0", borderBottom: `1px solid ${COLORS.line}`, fontSize: 13 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("b", { children: t2.date }),
-            " \xB7 ",
-            t2.prep,
-            " \xB7 ",
-            RESPONSE_MAP[t2.response]?.emoji,
-            t2.concerning && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { marginLeft: 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pill, { bg: COLORS.redLt, fg: COLORS.red, children: "\u26A0" }) }),
-            t2.notes && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: COLORS.grey, marginTop: 2 }, children: t2.notes })
-          ] }, i2))
-        ] })
+        ...(() => {
+          const h = import_react53.createElement;
+          const toggle = (id) => setOpenSec((p2) => ({ ...p2, [id]: !p2[id] }));
+          const sec = (id, title, count, body) => h(Card, { key: id },
+            h("div", { onClick: () => toggle(id), style: { display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontWeight: 800 } },
+              h("span", null, title + (count > 0 ? " (" + count + ")" : "")),
+              h("span", { style: { fontSize: 12, color: COLORS.grey, fontWeight: 400 } }, openSec[id] ? "Hide \u25B2" : "Show \u25BC")),
+            openSec[id] && h("div", { style: { marginTop: 8 } }, body));
+          const rowStyle = { padding: "7px 0", borderBottom: "1px solid " + COLORS.line, fontSize: 13 };
+          const triedBody = tried.length === 0 ? h("div", { style: { color: COLORS.grey, fontSize: 13, fontStyle: "italic" } }, "Not logged yet.") : tried.map((t2, i2) => h("div", { key: i2, style: rowStyle },
+            h("b", null, t2.date), " \u00B7 ", t2.prep, " \u00B7 ", RESPONSE_MAP[t2.response]?.emoji, "",
+            t2.via && h("span", { style: { marginLeft: 6 } }, h(Pill, { bg: COLORS.goldLt, fg: "#8a6a1e" }, "mix-in")),
+            t2.concerning && h("span", { style: { marginLeft: 6 } }, h(Pill, { bg: COLORS.redLt, fg: COLORS.red }, "\u26A0")),
+            t2.notes && h("div", { style: { color: COLORS.grey, marginTop: 2 } }, t2.notes)));
+          const schedBody = [
+            visibleSchedule.length === 0 && h("div", { key: "empty", style: { color: COLORS.grey, fontSize: 13, fontStyle: "italic" } }, schedule.length > 0 ? "No upcoming occurrences \u2014 it was scheduled earlier in the plan." : "Not scheduled anywhere in the " + TOTAL_PLAN_WEEKS + "-week plan \u2014 but you could always Swap or Mix-in on the Plan page."),
+            ...visibleSchedule.map((o2, i2) => h("div", { key: i2, style: rowStyle },
+              h("b", null, "Week ", o2.week), ", ", o2.dayName, o2.mealLabel ? " \u2014 " + o2.mealLabel : "",
+              o2.role && h(Pill, { bg: COLORS.goldLt, fg: "#8a6a1e" }, " ", o2.role)))
+          ];
+          const catBody = [
+            containingFoods.length === 0 && h("div", { key: "empty", style: { color: COLORS.grey, fontSize: 13, fontStyle: "italic" } }, "Nothing in your combos, branded products, or custom meals contains ", selected.label, " yet."),
+            ...containingFoods.map((p2) => h("div", { key: p2.key, style: rowStyle },
+              h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                h("b", null, p2.label),
+                h(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk }, p2.source === "branded" ? "brand" : p2.source === "custom" ? "your recipe" : "combo")),
+              h("div", { style: { fontSize: 11, color: COLORS.grey, marginTop: 2 } }, "Ingredients: ", p2.ingredients.join(", ")))),
+            containingFoods.length > 0 && h("div", { key: "tip", style: { fontSize: 11, color: COLORS.grey, marginTop: 6, fontStyle: "italic" } }, "Use Swap on the Plan page to put one of these in for ", selected.label, ".")
+          ];
+          return [
+            sec("tried", "\u2705 Tried", tried.length, triedBody),
+            sec("sched", "\u{1F4C5} Scheduled", visibleSchedule.length, schedBody),
+            sec("cat", "\u{1F37D}\uFE0F Foods with This Ingredient", containingFoods.length, catBody)
+          ];
+        })()
       ] })
     ] });
   }
@@ -59583,7 +59600,13 @@ This typically indicates that your device does not have a healthy Internet conne
         /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SmallBtn, { tone: viewMode === "next7" ? "sage" : "ghost", onClick: () => setViewMode("next7"), children: "Next 7 Days" })
       ] }),
       viewMode === "next7" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NextSevenDaysView, { overrides, planStartDate, onLog, planOverrides, setPlanOverrides, skippedDays, entries, inventoryPurchases, onViewDay }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", overflowX: "auto", gap: 6, marginBottom: 14, paddingBottom: 4, WebkitOverflowScrolling: "touch" }, children: Array.from({ length: TOTAL_PLAN_WEEKS }, (_, i2) => i2 + 1).map((w2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => pickWeek(w2), style: {
+        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { ref: (el) => {
+          if (el && el.__weekShown !== week) {
+            el.__weekShown = week;
+            const btn = el.children[week - 1];
+            if (btn) el.scrollLeft += btn.getBoundingClientRect().left - el.getBoundingClientRect().left - (el.clientWidth - btn.offsetWidth) / 2;
+          }
+        }, style: { display: "flex", overflowX: "auto", gap: 6, marginBottom: 14, paddingBottom: 4, WebkitOverflowScrolling: "touch" }, children: Array.from({ length: TOTAL_PLAN_WEEKS }, (_, i2) => i2 + 1).map((w2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => pickWeek(w2), style: {
           flexShrink: 0,
           padding: "10px 16px",
           borderRadius: 10,
