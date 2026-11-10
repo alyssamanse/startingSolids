@@ -58659,6 +58659,7 @@ This typically indicates that your device does not have a healthy Internet conne
       { id: "first100", label: "First 100 Foods", icon: "\u{1F4AF}" },
       { id: "milestones", label: "Milestone Timeline", icon: "\u{1F389}" },
       { id: "reports", label: "Reports", icon: "\u{1F4CA}" },
+      { id: "pedreport", label: "Pediatrician Report", icon: "\u{1FA7A}" },
       { id: "ask", label: "Ask a Question", icon: "\u2753" },
       { id: "foodsearch", label: "Search a Food", icon: "\u{1F50D}" },
       { id: "createmeal", label: "Create a Meal", icon: "\u{1F4D3}" },
@@ -61270,6 +61271,111 @@ This typically indicates that your device does not have a healthy Internet conne
       ] })
     ] });
   }
+
+  function buildPediatricianReport(entries) {
+    const today = todayStr();
+    const dated = entries.filter((e3) => e3.date).sort((a, b2) => a.date < b2.date ? -1 : a.date > b2.date ? 1 : 0);
+    const nameMap = canonicalNameMap(entries);
+    const byFood = {};
+    dated.forEach((e3) => (e3.foods || []).forEach((f) => {
+      const k2 = normalize2(f);
+      (byFood[k2] = byFood[k2] || []).push(e3);
+    }));
+    const foods = Object.keys(byFood).map((k2) => {
+      const list = byFood[k2];
+      return { name: nameMap[k2] || k2, count: list.length, avg: list.reduce((s2, e3) => s2 + (e3.response || 0), 0) / list.length };
+    }).sort((a, b2) => a.name.localeCompare(b2.name));
+    const allergens = DATA.ALLERGENS.map((a) => {
+      const labels = new Set((ALLERGEN_MAP[a.name] || []).map((k2) => DATA.FOOD_LIB[k2] ? normalize2(DATA.FOOD_LIB[k2].label) : null).filter(Boolean));
+      const hits = dated.filter((e3) => (e3.foods || []).some((f) => labels.has(normalize2(f))));
+      return { name: a.name, icon: a.icon, total: hits.length, first: hits.length ? hits[0].date : null, last: hits.length ? hits[hits.length - 1].date : null, reaction: hits.some((e3) => e3.concerning) };
+    });
+    const reactions = dated.filter((e3) => e3.concerning).reverse().map((e3) => ({ date: e3.date, foods: (e3.foods || []).join(", "), types: (e3.concerningTypes || []).join(", "), notes: e3.notes || "" }));
+    const labelToKey = {};
+    Object.entries(DATA.FOOD_LIB).forEach(([k2, f]) => { labelToKey[normalize2(f.label)] = k2; });
+    const start30 = addDays(today, -29);
+    const ironDays = new Set(), omegaDays = new Set(), loggedDays = new Set();
+    dated.forEach((e3) => {
+      if (e3.date < start30 || e3.date > today) return;
+      loggedDays.add(e3.date);
+      (e3.foods || []).forEach((label) => {
+        const key = labelToKey[normalize2(label)];
+        if (!key) return;
+        if (DATA.FOOD_LIB[key].iron) ironDays.add(e3.date);
+        if (DATA.FOOD_LIB[key].omega3) omegaDays.add(e3.date);
+      });
+    });
+    let ironFoods = 0, omegaFoods = 0;
+    foods.forEach((f) => { const key = labelToKey[normalize2(f.name)]; if (key) { if (DATA.FOOD_LIB[key].iron) ironFoods++; if (DATA.FOOD_LIB[key].omega3) omegaFoods++; } });
+    const prep = {};
+    dated.forEach((e3) => { const p2 = e3.prep || "Other"; prep[p2] = (prep[p2] || 0) + 1; });
+    const reg = foods.filter((f) => f.count >= 2);
+    const loved = [...reg].sort((a, b2) => b2.avg - a.avg).slice(0, 5).filter((f) => f.avg >= 4);
+    const disliked = [...reg].sort((a, b2) => a.avg - b2.avg).slice(0, 5).filter((f) => f.avg <= 2.5);
+    return { today, tries: dated.length, first: dated.length ? dated[0].date : null, foods, allergens, reactions, ironDays: ironDays.size, omegaDays: omegaDays.size, loggedDays: loggedDays.size, ironFoods, omegaFoods, prep, loved, disliked };
+  }
+  function pedDate(d) {
+    return d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "\u2014";
+  }
+  function PediatricianReport({ entries }) {
+    const h = import_react58.createElement;
+    const [notes, setNotes] = import_react58.useState("");
+    const [questions, setQuestions] = import_react58.useState("");
+    const [copied, setCopied] = import_react58.useState(false);
+    const r3 = import_react58.useMemo(() => buildPediatricianReport(entries), [entries]);
+    const introduced = r3.allergens.filter((a) => a.total > 0);
+    const notYet = r3.allergens.filter((a) => a.total === 0);
+    const toText = () => {
+      const L = ["Solids summary \u2014 prepared " + pedDate(r3.today), "", "Solids logged since " + pedDate(r3.first) + ": " + r3.tries + " tries, " + r3.foods.length + " different foods."];
+      L.push("Iron-rich foods offered on " + r3.ironDays + " of the last 30 days; omega-3 foods on " + r3.omegaDays + " (logged " + r3.loggedDays + " of 30 days).", "", "ALLERGEN INTRODUCTIONS");
+      introduced.forEach((a) => L.push("- " + a.name + ": first " + pedDate(a.first) + ", " + a.total + " exposure" + (a.total === 1 ? "" : "s") + ", last " + pedDate(a.last) + (a.reaction ? " \u2014 REACTION LOGGED" : " \u2014 no reaction logged")));
+      if (notYet.length) L.push("Not yet introduced: " + notYet.map((a) => a.name).join(", "));
+      L.push("", "CONCERNING REACTIONS");
+      if (r3.reactions.length === 0) L.push("None logged.");
+      r3.reactions.forEach((x3) => L.push("- " + pedDate(x3.date) + ": " + x3.foods + (x3.types ? " (" + x3.types + ")" : "") + (x3.notes ? " \u2014 " + x3.notes : "")));
+      L.push("", "FOODS TRIED (" + r3.foods.length + "): " + r3.foods.map((f) => f.name + (f.count > 1 ? " x" + f.count : "")).join(", "));
+      if (notes.trim()) L.push("", "NOTES: " + notes.trim());
+      if (questions.trim()) L.push("", "QUESTIONS: " + questions.trim());
+      return L.join("\n");
+    };
+    const copy = () => {
+      try { navigator.clipboard.writeText(toText()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); } catch (err) { window.prompt("Copy this summary:", toText()); }
+    };
+    const sec = (title, ...kids) => h(Card, null, h("div", { style: { fontWeight: 800, marginBottom: 8 } }, title), ...kids);
+    const row = { padding: "6px 0", borderBottom: "1px solid " + COLORS.line, fontSize: 13.5 };
+    const ta = { width: "100%", minHeight: 70, padding: 8, borderRadius: 8, border: "1px solid " + COLORS.line, boxSizing: "border-box", fontFamily: "inherit", fontSize: 13.5 };
+    return h("div", null,
+      h("style", null, "@media print { body * { visibility: hidden !important; } .ped-report, .ped-report * { visibility: visible !important; } .ped-report { position: absolute; left: 0; top: 0; width: 100%; padding: 16px; } .ped-noprint { display: none !important; } }"),
+      h("div", { className: "ped-report" },
+        h("h1", { style: { fontSize: 26, margin: "0 0 4px", color: COLORS.charcoal, fontWeight: 800 } }, "\u{1FA7A} Pediatrician Report"),
+        h("div", { style: { color: COLORS.grey, fontSize: 13, marginBottom: 12 } }, "Prepared " + pedDate(r3.today) + (r3.first ? " \u00B7 solids logged since " + pedDate(r3.first) : "")),
+        h("div", { className: "ped-noprint", style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" } },
+          h(SmallBtn, { onClick: () => window.print() }, "\u{1F5A8}\uFE0F Print / save as PDF"),
+          h(SmallBtn, { tone: "ghost", onClick: copy }, copied ? "\u2713 Copied" : "\u{1F4CB} Copy as text")),
+        entries.length === 0 ? h(Callout, { label: "Nothing logged yet" }, "Log a few foods in the Food Tracker and this report fills in automatically.") : h("div", null,
+          sec("At a glance",
+            h("div", { style: row }, h("b", null, r3.tries), " tries logged \u00B7 ", h("b", null, r3.foods.length), " different foods"),
+            h("div", { style: row }, "Iron-rich foods offered on ", h("b", null, r3.ironDays + " of the last 30 days"), " (" + r3.ironFoods + " different iron foods tried)"),
+            h("div", { style: row }, "Omega-3 foods offered on ", h("b", null, r3.omegaDays + " of the last 30 days"), " (" + r3.omegaFoods + " different omega-3 foods tried)"),
+            h("div", { style: row }, "Texture / prep: " + (Object.entries(r3.prep).sort((a, b2) => b2[1] - a[1]).map(([k2, v]) => k2 + " " + v).join(" \u00B7 ") || "\u2014"))),
+          sec("Allergen introductions",
+            introduced.length === 0 && h("div", { style: { color: COLORS.grey, fontSize: 13 } }, "No top allergens logged yet."),
+            ...introduced.map((a) => h("div", { key: a.name, style: row }, a.icon + " ", h("b", null, a.name), " \u2014 first " + pedDate(a.first) + ", " + a.total + " exposure" + (a.total === 1 ? "" : "s") + ", last " + pedDate(a.last) + " ", a.reaction ? h(Pill, { bg: COLORS.redLt, fg: COLORS.red }, "\u26A0 reaction logged") : h(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk }, "no reaction logged"))),
+            notYet.length > 0 && h("div", { style: { fontSize: 12.5, color: COLORS.grey, marginTop: 8 } }, "Not yet introduced: " + notYet.map((a) => a.name).join(", "))),
+          sec("Concerning reactions",
+            r3.reactions.length === 0 && h("div", { style: { color: COLORS.grey, fontSize: 13 } }, "None logged."),
+            ...r3.reactions.map((x3, i2) => h("div", { key: i2, style: row }, h("b", null, pedDate(x3.date)), " \u2014 " + x3.foods + (x3.types ? " (" + x3.types + ")" : ""), x3.notes && h("div", { style: { color: COLORS.grey, fontSize: 12.5 } }, x3.notes)))),
+          (r3.loved.length > 0 || r3.disliked.length > 0) && sec("Preferences (foods tried 2+ times)",
+            r3.loved.length > 0 && h("div", { style: row }, "\u{1F60D} Favorites: " + r3.loved.map((f) => f.name).join(", ")),
+            r3.disliked.length > 0 && h("div", { style: row }, "\u{1F641} Not a fan yet: " + r3.disliked.map((f) => f.name).join(", "))),
+          sec("Foods tried (" + r3.foods.length + ")", h("div", { style: { fontSize: 13, lineHeight: 1.6 } }, r3.foods.map((f) => f.name + (f.count > 1 ? " \u00D7" + f.count : "")).join(", "))),
+          sec("Notes & questions for the visit",
+            h("div", { style: { fontSize: 12, color: COLORS.grey, marginBottom: 4 } }, "Weight, sleep, poop changes, anything else to mention:"),
+            h("textarea", { value: notes, onChange: (e3) => setNotes(e3.target.value), style: ta }),
+            h("div", { style: { fontSize: 12, color: COLORS.grey, margin: "8px 0 4px" } }, "Questions to ask:"),
+            h("textarea", { value: questions, onChange: (e3) => setQuestions(e3.target.value), style: ta }),
+            h("div", { className: "ped-noprint", style: { fontSize: 11, color: COLORS.grey, marginTop: 4 } }, "These notes aren't saved \u2014 print or copy before leaving this page.")))));
+  }
   function ReportsSection({ entries }) {
     const [pairingFood, setPairingFood] = (0, import_react58.useState)("");
     const nameMap = (0, import_react58.useMemo)(() => canonicalNameMap(entries), [entries]);
@@ -62205,6 +62311,8 @@ This typically indicates that your device does not have a healthy Internet conne
           return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MilestonesView, { entries });
         case "reports":
           return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ReportsSection, { entries });
+        case "pedreport":
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PediatricianReport, { entries });
         case "ask":
           return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AskChat, {});
         case "foodsearch":
