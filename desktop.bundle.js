@@ -61311,9 +61311,9 @@ This typically indicates that your device does not have a healthy Internet conne
     const allergens = DATA.ALLERGENS.map((a) => {
       const labels = new Set((ALLERGEN_MAP[a.name] || []).map((k2) => DATA.FOOD_LIB[k2] ? normalize2(DATA.FOOD_LIB[k2].label) : null).filter(Boolean));
       const hits = dated.filter((e3) => (e3.foods || []).some((f) => labels.has(normalize2(f))));
-      return { name: a.name, icon: a.icon, total: hits.length, first: hits.length ? hits[0].date : null, last: hits.length ? hits[hits.length - 1].date : null, reaction: hits.some((e3) => e3.concerning), reactionNotes: hits.filter((e3) => e3.concerning).map((e3) => ({ date: e3.date, types: (e3.concerningTypes || []).join(", "), notes: e3.notes || "" })) };
+      return { name: a.name, icon: a.icon, total: hits.length, first: hits.length ? hits[0].date : null, last: hits.length ? hits[hits.length - 1].date : null, reaction: hits.some((e3) => e3.concerning), reactionNotes: hits.filter((e3) => e3.concerning).map((e3) => ({ date: e3.date, types: (e3.concerningTypes || []).join(", "), notes: [e3.concerningDetails, e3.notes].filter(Boolean).join(" \u2014 ") })) };
     });
-    const reactions = dated.filter((e3) => e3.concerning).reverse().map((e3) => ({ date: e3.date, foods: (e3.foods || []).join(", "), types: (e3.concerningTypes || []).join(", "), notes: e3.notes || "" }));
+    const reactions = dated.filter((e3) => e3.concerning && e3.date >= addDays(today, -59)).reverse().map((e3) => ({ date: e3.date, foods: (e3.foods || []).join(", "), types: (e3.concerningTypes || []).join(", "), details: e3.concerningDetails || "", entryNotes: e3.notes || "", notes: [e3.concerningDetails, e3.notes].filter(Boolean).join(" \u2014 ") }));
     const labelToKey = {};
     Object.entries(DATA.FOOD_LIB).forEach(([k2, f]) => { labelToKey[normalize2(f.label)] = k2; });
     const start30 = addDays(today, -29);
@@ -61374,7 +61374,7 @@ This typically indicates that your device does not have a healthy Internet conne
       L.push("", "Iron-rich foods offered on " + r3.ironDays + " of the last 30 days; omega-3 foods on " + r3.omegaDays + " (logged " + r3.loggedDays + " of 30 days).", "", "ALLERGEN INTRODUCTIONS");
       introduced.forEach((a) => L.push("- " + a.name + ": first " + pedDate(a.first) + ", " + a.total + " exposure" + (a.total === 1 ? "" : "s") + ", last " + pedDate(a.last) + (a.reaction ? " \u2014 REACTION LOGGED" + a.reactionNotes.map((x3) => " [" + pedDate(x3.date) + (x3.types ? ", " + x3.types : "") + (x3.notes ? ": " + x3.notes : "") + "]").join("") : " \u2014 no reaction logged")));
       if (notYet.length) L.push("Not yet introduced: " + notYet.map((a) => a.name).join(", "));
-      L.push("", "CONCERNING REACTIONS");
+      L.push("", "CONCERNING REACTIONS (LAST 60 DAYS)");
       if (r3.reactions.length === 0) L.push("None logged.");
       r3.reactions.forEach((x3) => L.push("- " + pedDate(x3.date) + ": " + x3.foods + (x3.types ? " (" + x3.types + ")" : "") + (x3.notes ? " \u2014 " + x3.notes : "")));
       L.push("", "FOODS TRIED (" + r3.foods.length + "): " + r3.foods.map((f) => f.name + (f.count > 1 ? " x" + f.count : "")).join(", "));
@@ -61441,8 +61441,8 @@ This typically indicates that your device does not have a healthy Internet conne
                 a.total > 0 && h("div", { style: { fontSize: 10.5, color: COLORS.grey } }, pedDate(a.first).replace(/, \d{4}$/, "") + " \u00B7 \u00D7" + a.total));
             })),
             h("div", { style: { fontSize: 11, color: COLORS.grey, marginTop: 8 } }, "Green = introduced, no reaction logged \u00B7 Red = reaction logged \u00B7 Grey = not yet introduced \u00B7 date shown is first exposure")),
-          r3.reactions.length === 0 ? h("div", { style: { background: COLORS.sageLt, color: COLORS.sageDk, borderRadius: 12, padding: "10px 14px", fontWeight: 700, fontSize: 13.5, marginBottom: 12 } }, "\u2713 No concerning reactions logged") : sec("Concerning reactions (" + r3.reactions.length + ")",
-            ...r3.reactions.map((x3, i2) => h("div", { key: i2, style: { borderLeft: "4px solid " + COLORS.red, background: COLORS.redLt, borderRadius: 8, padding: "8px 10px", marginBottom: 8, fontSize: 13.5 } }, h("b", null, pedDate(x3.date)), " \u2014 " + x3.foods + (x3.types ? " (" + x3.types + ")" : ""), x3.notes && h("div", { style: { color: COLORS.charcoal, marginTop: 2, fontSize: 13 } }, x3.notes)))),
+          r3.reactions.length === 0 ? h("div", { style: { background: COLORS.sageLt, color: COLORS.sageDk, borderRadius: 12, padding: "10px 14px", fontWeight: 700, fontSize: 13.5, marginBottom: 12 } }, "\u2713 No concerning reactions in the last 60 days") : sec("Concerning reactions \u00B7 last 60 days (" + r3.reactions.length + ")",
+            ...r3.reactions.map((x3, i2) => h("div", { key: i2, style: { borderLeft: "4px solid " + COLORS.red, background: COLORS.redLt, borderRadius: 8, padding: "8px 10px", marginBottom: 8, fontSize: 13.5 } }, h("b", null, pedDate(x3.date)), " \u2014 " + x3.foods + (x3.types ? " (" + x3.types + ")" : ""), x3.details && h("div", { style: { color: COLORS.charcoal, marginTop: 4, fontSize: 13 } }, h("b", null, "Details: "), x3.details), x3.entryNotes && h("div", { style: { color: COLORS.charcoal, marginTop: 3, fontSize: 13 } }, h("b", null, "Notes: "), x3.entryNotes)))),
           sec("Texture & prep",
             h("div", { style: { display: "flex", height: 14, borderRadius: 7, overflow: "hidden", marginBottom: 6 } }, Object.entries(r3.prep).sort((a, b2) => b2[1] - a[1]).map(([k2, v], i2) => h("div", { key: k2, style: { width: (v / prepTotal * 100) + "%", background: prepColors[i2 % prepColors.length] } }))),
             h("div", { style: { display: "flex", flexWrap: "wrap", gap: 10, fontSize: 12 } }, Object.entries(r3.prep).sort((a, b2) => b2[1] - a[1]).map(([k2, v], i2) => h("span", { key: k2 }, h("span", { style: { display: "inline-block", width: 10, height: 10, borderRadius: 3, background: prepColors[i2 % prepColors.length], marginRight: 4 } }), k2 + " " + Math.round(v / prepTotal * 100) + "%")))),
