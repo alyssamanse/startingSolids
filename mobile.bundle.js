@@ -60177,7 +60177,7 @@ This typically indicates that your device does not have a healthy Internet conne
     }));
     const foods = Object.keys(byFood).map((k2) => {
       const list = byFood[k2];
-      return { name: nameMap[k2] || k2, count: list.length, avg: list.reduce((s2, e3) => s2 + (e3.response || 0), 0) / list.length };
+      return { name: nameMap[k2] || k2, first: list[0].date, count: list.length, avg: list.reduce((s2, e3) => s2 + (e3.response || 0), 0) / list.length };
     }).sort((a, b2) => a.name.localeCompare(b2.name));
     const allergens = DATA.ALLERGENS.map((a) => {
       const labels = new Set((ALLERGEN_MAP[a.name] || []).map((k2) => DATA.FOOD_LIB[k2] ? normalize2(DATA.FOOD_LIB[k2].label) : null).filter(Boolean));
@@ -60213,7 +60213,7 @@ This typically indicates that your device does not have a healthy Internet conne
       newAllergens: allergens.filter((a) => a.first && a.first >= since30),
       reactions: reactions.filter((x3) => x3.date >= since30)
     };
-    return { recent, since30, today, tries: dated.length, first: dated.length ? dated[0].date : null, foods, allergens, reactions, ironDays: ironDays.size, omegaDays: omegaDays.size, loggedDays: loggedDays.size, ironFoods, omegaFoods, prep, loved, disliked };
+    return { loggedDaysList: [...loggedDays], ironDaysList: [...ironDays], recent, since30, today, tries: dated.length, first: dated.length ? dated[0].date : null, foods, allergens, reactions, ironDays: ironDays.size, omegaDays: omegaDays.size, loggedDays: loggedDays.size, ironFoods, omegaFoods, prep, loved, disliked };
   }
   function pedDate(d) {
     return d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "\u2014";
@@ -60223,9 +60223,21 @@ This typically indicates that your device does not have a healthy Internet conne
     const [notes, setNotes] = import_react53.useState("");
     const [questions, setQuestions] = import_react53.useState("");
     const [copied, setCopied] = import_react53.useState(false);
+    const [showAll, setShowAll] = import_react53.useState(false);
     const r3 = import_react53.useMemo(() => buildPediatricianReport(entries), [entries]);
     const introduced = r3.allergens.filter((a) => a.total > 0);
     const notYet = r3.allergens.filter((a) => a.total === 0);
+    const catOf = import_react53.useMemo(() => {
+      const m2 = {};
+      Object.entries(DATA.FOODS100).forEach(([cat, list]) => list.forEach((n2) => { m2[normalize2(n2)] = cat.replace(/\s*\(\d+\)\s*$/, ""); }));
+      return m2;
+    }, []);
+    const groups = import_react53.useMemo(() => {
+      const g2 = {};
+      r3.foods.forEach((f) => { const c2 = catOf[normalize2(f.name)] || "Other, combos & branded"; (g2[c2] = g2[c2] || []).push(f); });
+      return Object.entries(g2).sort((a, b2) => b2[1].length - a[1].length);
+    }, [r3, catOf]);
+    const palette = [COLORS.sageLt, COLORS.terraLt, COLORS.goldLt, COLORS.blueLt, COLORS.redLt];
     const toText = () => {
       const L = ["Solids summary \u2014 prepared " + pedDate(r3.today), "", "Solids logged since " + pedDate(r3.first) + ": " + r3.tries + " tries, " + r3.foods.length + " different foods."];
       L.push("", "LAST 30 DAYS (" + pedDate(r3.since30) + " - " + pedDate(r3.today) + ")", r3.recent.tries + " tries on " + r3.loggedDays + " of 30 days; " + r3.recent.newFoods.length + " new foods" + (r3.recent.newFoods.length ? ": " + r3.recent.newFoods.join(", ") : "") + ".", "New allergens: " + (r3.recent.newAllergens.length ? r3.recent.newAllergens.map((a) => a.name + " (" + pedDate(a.first) + ")").join(", ") : "none") + ".", r3.recent.reactions.length === 0 ? "Reactions: none logged." : "Reactions:");
@@ -60244,42 +60256,76 @@ This typically indicates that your device does not have a healthy Internet conne
     const copy = () => {
       try { navigator.clipboard.writeText(toText()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); } catch (err) { window.prompt("Copy this summary:", toText()); }
     };
-    const sec = (title, ...kids) => h(Card, null, h("div", { style: { fontWeight: 800, marginBottom: 8 } }, title), ...kids);
-    const row = { padding: "6px 0", borderBottom: "1px solid " + COLORS.line, fontSize: 13.5 };
+    const printIt = () => { setShowAll(true); setTimeout(() => window.print(), 150); };
+    const sec = (title, ...kids) => h(Card, null, h("div", { style: { fontWeight: 800, marginBottom: 10 } }, title), ...kids);
+    const tile = (label, value, sub, bg, fg) => h("div", { key: label, style: { background: bg, borderRadius: 14, padding: "12px 10px", textAlign: "center" } },
+      h("div", { style: { fontSize: 28, fontWeight: 800, color: fg, lineHeight: 1.1 } }, value),
+      h("div", { style: { fontSize: 12, fontWeight: 700, color: COLORS.charcoal, marginTop: 4 } }, label),
+      sub && h("div", { style: { fontSize: 11, color: COLORS.grey, marginTop: 2 } }, sub));
+    const bar = (label, n2, total, color) => h("div", { key: label, style: { marginBottom: 8 } },
+      h("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 3 } }, h("span", null, label), h("b", null, n2 + " / " + total + " days")),
+      h("div", { style: { height: 10, borderRadius: 6, background: COLORS.line, overflow: "hidden" } }, h("div", { style: { width: Math.round(n2 / total * 100) + "%", height: "100%", background: color } })));
     const ta = { width: "100%", minHeight: 70, padding: 8, borderRadius: 8, border: "1px solid " + COLORS.line, boxSizing: "border-box", fontFamily: "inherit", fontSize: 13.5 };
+    const chip = (f, bg, key, isNew) => h("span", { key: key, style: { display: "inline-block", background: bg, borderRadius: 999, padding: "3px 10px", margin: "0 6px 6px 0", fontSize: 12.5, border: isNew ? "1.5px solid " + COLORS.gold : "1.5px solid transparent" } }, (isNew ? "\u2605 " : "") + f.name + (f.count > 1 ? " \u00D7" + f.count : ""));
+    const days = [];
+    for (let i3 = 29; i3 >= 0; i3--) days.push(addDays(r3.today, -i3));
+    const loggedSet = new Set(r3.loggedDaysList), ironSet = new Set(r3.ironDaysList);
+    const prepTotal = Object.values(r3.prep).reduce((s2, v) => s2 + v, 0) || 1;
+    const prepColors = [COLORS.sage, COLORS.terra, COLORS.gold, COLORS.blue, COLORS.grey];
     return h("div", null,
-      h("style", null, "@media print { body * { visibility: hidden !important; } .ped-report, .ped-report * { visibility: visible !important; } .ped-report { position: absolute; left: 0; top: 0; width: 100%; padding: 16px; } .ped-noprint { display: none !important; } }"),
+      h("style", null, "@media print { body * { visibility: hidden !important; } .ped-report, .ped-report * { visibility: visible !important; } .ped-report { position: absolute; left: 0; top: 0; width: 100%; padding: 16px; } .ped-noprint { display: none !important; } .ped-report * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }"),
       h("div", { className: "ped-report" },
         h("h1", { style: { fontSize: 26, margin: "0 0 4px", color: COLORS.charcoal, fontWeight: 800 } }, "\u{1FA7A} Pediatrician Report"),
         h("div", { style: { color: COLORS.grey, fontSize: 13, marginBottom: 12 } }, "Prepared " + pedDate(r3.today) + (r3.first ? " \u00B7 solids logged since " + pedDate(r3.first) : "")),
         h("div", { className: "ped-noprint", style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" } },
-          h(SmallBtn, { onClick: () => window.print() }, "\u{1F5A8}\uFE0F Print / save as PDF"),
+          h(SmallBtn, { onClick: printIt }, "\u{1F5A8}\uFE0F Print / save as PDF"),
           h(SmallBtn, { tone: "ghost", onClick: copy }, copied ? "\u2713 Copied" : "\u{1F4CB} Copy as text")),
         entries.length === 0 ? h(Callout, { label: "Nothing logged yet" }, "Log a few foods in the Food Tracker and this report fills in automatically.") : h("div", null,
-          sec("Last 30 days at a glance",
-            h("div", { style: { fontSize: 12, color: COLORS.grey, marginBottom: 4 } }, pedDate(r3.since30) + " \u2013 " + pedDate(r3.today)),
-            h("div", { style: row }, h("b", null, r3.recent.tries), " tries on ", h("b", null, r3.loggedDays + " of 30 days")),
-            h("div", { style: row }, h("b", null, r3.recent.newFoods.length), " new foods" + (r3.recent.newFoods.length ? ": " + r3.recent.newFoods.join(", ") : "")),
-            h("div", { style: row }, "New allergens introduced: " + (r3.recent.newAllergens.length ? r3.recent.newAllergens.map((a) => a.icon + " " + a.name + " (" + pedDate(a.first) + ")").join(", ") : "none")),
-            h("div", { style: row }, "Iron-rich foods on ", h("b", null, r3.ironDays + " days"), " \u00B7 omega-3 foods on ", h("b", null, r3.omegaDays + " days")),
-            h("div", { style: { ...row, borderBottom: "none" } }, h("b", null, "Reactions: "), r3.recent.reactions.length === 0 ? "none logged" : r3.recent.reactions.length + " logged"),
-            ...r3.recent.reactions.map((x3, i2) => h("div", { key: "r" + i2, style: { fontSize: 13, padding: "4px 0 4px 12px", borderLeft: "3px solid " + COLORS.red, marginBottom: 4 } }, h("b", null, pedDate(x3.date)), " \u2014 " + x3.foods + (x3.types ? " (" + x3.types + ")" : ""), x3.notes && h("div", { style: { color: COLORS.grey } }, "Notes: " + x3.notes)))),
-          sec("At a glance",
-            h("div", { style: row }, h("b", null, r3.tries), " tries logged \u00B7 ", h("b", null, r3.foods.length), " different foods"),
-            h("div", { style: row }, "Iron-rich foods offered on ", h("b", null, r3.ironDays + " of the last 30 days"), " (" + r3.ironFoods + " different iron foods tried)"),
-            h("div", { style: row }, "Omega-3 foods offered on ", h("b", null, r3.omegaDays + " of the last 30 days"), " (" + r3.omegaFoods + " different omega-3 foods tried)"),
-            h("div", { style: row }, "Texture / prep: " + (Object.entries(r3.prep).sort((a, b2) => b2[1] - a[1]).map(([k2, v]) => k2 + " " + v).join(" \u00B7 ") || "\u2014"))),
+          h("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 12 } },
+            tile("Tries", r3.recent.tries, "last 30 days", COLORS.sageLt, COLORS.sageDk),
+            tile("New foods", r3.recent.newFoods.length, "last 30 days", COLORS.goldLt, "#8a6a1e"),
+            tile("Iron-rich days", r3.ironDays + "/30", r3.ironFoods + " iron foods tried", COLORS.terraLt, COLORS.terra),
+            tile("Reactions", r3.recent.reactions.length, r3.recent.reactions.length === 0 ? "none in 30 days" : "in last 30 days", r3.recent.reactions.length === 0 ? COLORS.sageLt : COLORS.redLt, r3.recent.reactions.length === 0 ? COLORS.sageDk : COLORS.red)),
+          sec("Last 30 days",
+            h("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 6 } }, days.map((d3) => {
+              const lg = loggedSet.has(d3), ir = ironSet.has(d3);
+              return h("div", { key: d3, title: pedDate(d3), style: { width: 22, height: 22, borderRadius: "50%", boxSizing: "border-box", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", color: lg ? "#fff" : COLORS.grey, background: lg ? (ir ? COLORS.sageDk : COLORS.sage) : "transparent", border: lg ? "none" : "1.5px solid " + COLORS.line } }, Number(d3.slice(8)));
+            })),
+            h("div", { style: { fontSize: 11, color: COLORS.grey, marginBottom: 10, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" } },
+              h("span", null, h("span", { style: { display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: COLORS.sage, marginRight: 4 } }), "logged"),
+              h("span", null, h("span", { style: { display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: COLORS.sageDk, marginRight: 4 } }), "logged + iron-rich food"),
+              h("span", null, h("span", { style: { display: "inline-block", width: 8, height: 8, borderRadius: "50%", border: "1.5px solid " + COLORS.line, marginRight: 4 } }), "nothing logged")),
+            bar("Days logged", r3.loggedDays, 30, COLORS.sage),
+            bar("Iron-rich foods", r3.ironDays, 30, COLORS.terra),
+            bar("Omega-3 foods", r3.omegaDays, 30, COLORS.blue),
+            r3.recent.newFoods.length > 0 && h("div", { style: { fontSize: 12.5, marginTop: 4 } }, h("b", null, "New this month: "), r3.recent.newFoods.join(", ")),
+            r3.recent.newAllergens.length > 0 && h("div", { style: { fontSize: 12.5, marginTop: 4 } }, h("b", null, "New allergens: "), r3.recent.newAllergens.map((a) => a.icon + " " + a.name + " (" + pedDate(a.first) + ")").join(", "))),
           sec("Allergen introductions",
-            introduced.length === 0 && h("div", { style: { color: COLORS.grey, fontSize: 13 } }, "No top allergens logged yet."),
-            ...introduced.map((a) => h("div", { key: a.name, style: row }, a.icon + " ", h("b", null, a.name), " \u2014 first " + pedDate(a.first) + ", " + a.total + " exposure" + (a.total === 1 ? "" : "s") + ", last " + pedDate(a.last) + " ", a.reaction ? h(Pill, { bg: COLORS.redLt, fg: COLORS.red }, "\u26A0 reaction logged") : h(Pill, { bg: COLORS.sageLt, fg: COLORS.sageDk }, "no reaction logged"), ...a.reactionNotes.map((x3, i2) => h("div", { key: i2, style: { fontSize: 12.5, color: COLORS.grey, marginTop: 2 } }, pedDate(x3.date) + (x3.types ? " (" + x3.types + ")" : "") + (x3.notes ? ": " + x3.notes : ""))))),
-            notYet.length > 0 && h("div", { style: { fontSize: 12.5, color: COLORS.grey, marginTop: 8 } }, "Not yet introduced: " + notYet.map((a) => a.name).join(", "))),
-          sec("Concerning reactions",
-            r3.reactions.length === 0 && h("div", { style: { color: COLORS.grey, fontSize: 13 } }, "None logged."),
-            ...r3.reactions.map((x3, i2) => h("div", { key: i2, style: row }, h("b", null, pedDate(x3.date)), " \u2014 " + x3.foods + (x3.types ? " (" + x3.types + ")" : ""), x3.notes && h("div", { style: { color: COLORS.grey, fontSize: 12.5 } }, x3.notes)))),
-          (r3.loved.length > 0 || r3.disliked.length > 0) && sec("Preferences (foods tried 2+ times)",
-            r3.loved.length > 0 && h("div", { style: row }, "\u{1F60D} Favorites: " + r3.loved.map((f) => f.name).join(", ")),
-            r3.disliked.length > 0 && h("div", { style: row }, "\u{1F641} Not a fan yet: " + r3.disliked.map((f) => f.name).join(", "))),
-          sec("Foods tried (" + r3.foods.length + ")", h("div", { style: { fontSize: 13, lineHeight: 1.6 } }, r3.foods.map((f) => f.name + (f.count > 1 ? " \u00D7" + f.count : "")).join(", "))),
+            h("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8 } }, r3.allergens.map((a) => {
+              const st = a.total === 0 ? "none" : a.reaction ? "react" : "ok";
+              const bg = st === "none" ? COLORS.cream : st === "react" ? COLORS.redLt : COLORS.sageLt;
+              const bd = st === "none" ? COLORS.line : st === "react" ? COLORS.red : COLORS.sage;
+              return h("div", { key: a.name, style: { background: bg, border: "1.5px solid " + bd, borderRadius: 12, padding: "8px 6px", textAlign: "center" } },
+                h("div", { style: { fontSize: 22 } }, a.icon),
+                h("div", { style: { fontSize: 12, fontWeight: 700 } }, a.name),
+                h("div", { style: { fontSize: 11, color: st === "react" ? COLORS.red : COLORS.grey, fontWeight: st === "react" ? 700 : 400 } }, st === "none" ? "not yet" : st === "react" ? "\u26A0 reaction" : "\u2713 no reaction"),
+                a.total > 0 && h("div", { style: { fontSize: 10.5, color: COLORS.grey } }, pedDate(a.first).replace(/, \d{4}$/, "") + " \u00B7 \u00D7" + a.total));
+            })),
+            h("div", { style: { fontSize: 11, color: COLORS.grey, marginTop: 8 } }, "Green = introduced, no reaction logged \u00B7 Red = reaction logged \u00B7 Grey = not yet introduced \u00B7 date shown is first exposure")),
+          r3.reactions.length === 0 ? h("div", { style: { background: COLORS.sageLt, color: COLORS.sageDk, borderRadius: 12, padding: "10px 14px", fontWeight: 700, fontSize: 13.5, marginBottom: 12 } }, "\u2713 No concerning reactions logged") : sec("Concerning reactions (" + r3.reactions.length + ")",
+            ...r3.reactions.map((x3, i2) => h("div", { key: i2, style: { borderLeft: "4px solid " + COLORS.red, background: COLORS.redLt, borderRadius: 8, padding: "8px 10px", marginBottom: 8, fontSize: 13.5 } }, h("b", null, pedDate(x3.date)), " \u2014 " + x3.foods + (x3.types ? " (" + x3.types + ")" : ""), x3.notes && h("div", { style: { color: COLORS.charcoal, marginTop: 2, fontSize: 13 } }, x3.notes)))),
+          sec("Texture & prep",
+            h("div", { style: { display: "flex", height: 14, borderRadius: 7, overflow: "hidden", marginBottom: 6 } }, Object.entries(r3.prep).sort((a, b2) => b2[1] - a[1]).map(([k2, v], i2) => h("div", { key: k2, style: { width: (v / prepTotal * 100) + "%", background: prepColors[i2 % prepColors.length] } }))),
+            h("div", { style: { display: "flex", flexWrap: "wrap", gap: 10, fontSize: 12 } }, Object.entries(r3.prep).sort((a, b2) => b2[1] - a[1]).map(([k2, v], i2) => h("span", { key: k2 }, h("span", { style: { display: "inline-block", width: 10, height: 10, borderRadius: 3, background: prepColors[i2 % prepColors.length], marginRight: 4 } }), k2 + " " + Math.round(v / prepTotal * 100) + "%")))),
+          sec("Foods tried (" + r3.foods.length + ")",
+            h("div", { style: { fontSize: 11, color: COLORS.grey, marginBottom: 8 } }, "\u2605 = first tried in the last 30 days"),
+            ...groups.map(([cat, list], gi) => h("div", { key: cat, style: { marginBottom: 6 } },
+              h("div", { style: { fontSize: 12, fontWeight: 700, color: COLORS.grey, marginBottom: 4 } }, cat + " (" + list.length + ")"),
+              (showAll || gi < 2) ? h("div", null, list.map((f, i2) => chip(f, palette[gi % palette.length], i2, f.first >= r3.since30))) : null)),
+            groups.length > 2 && h("div", { className: "ped-noprint" }, h(SmallBtn, { tone: "ghost", onClick: () => setShowAll(!showAll) }, showAll ? "Show fewer" : "Show all " + r3.foods.length + " foods"))),
+          (r3.loved.length > 0 || r3.disliked.length > 0) && sec("Preferences (tried 2+ times)",
+            r3.loved.length > 0 && h("div", { style: { marginBottom: 4 } }, h("span", { style: { fontSize: 12, fontWeight: 700 } }, "\u{1F60D} Favorites  "), r3.loved.map((f, i2) => chip(f, COLORS.sageLt, "l" + i2, false))),
+            r3.disliked.length > 0 && h("div", null, h("span", { style: { fontSize: 12, fontWeight: 700 } }, "\u{1F641} Not a fan yet  "), r3.disliked.map((f, i2) => chip(f, COLORS.terraLt, "d" + i2, false)))),
           sec("Notes & questions for the visit",
             h("div", { style: { fontSize: 12, color: COLORS.grey, marginBottom: 4 } }, "Weight, sleep, poop changes, anything else to mention:"),
             h("textarea", { value: notes, onChange: (e3) => setNotes(e3.target.value), style: ta }),
